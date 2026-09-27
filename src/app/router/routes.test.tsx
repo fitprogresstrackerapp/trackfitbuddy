@@ -1,3 +1,4 @@
+import '@/test/mock-home-data'
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -72,12 +73,12 @@ describe('signed in with an incomplete profile', () => {
 describe('signed in with a complete profile', () => {
   it.each(['/', '/login', '/onboarding'])('%s goes to Home', async (path) => {
     renderApp({ path, state: signedIn() })
-    expect(await heading(/home/i)).toBeTruthy()
+    expect(await heading(/^asha$/i)).toBeTruthy()
   })
 
   it('a regular user cannot open Admin', async () => {
     renderApp({ path: '/admin', state: signedIn(makeAccount({ roles: ['USER', 'MANAGER'] })) })
-    expect(await heading(/^home$/i)).toBeTruthy()
+    expect(await heading(/^asha$/i)).toBeTruthy()
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull()
   })
 
@@ -103,7 +104,7 @@ describe('signed in with a complete profile', () => {
     expect(await screen.findByRole('link', { name: 'Admin' })).toBeTruthy()
     cleanup()
     renderApp({ path: '/', state: signedIn() })
-    await heading(/^home$/i)
+    await heading(/^asha$/i)
     expect(screen.queryByRole('link', { name: 'Admin' })).toBeNull()
   })
 
@@ -137,7 +138,7 @@ describe('signed in with a complete profile', () => {
     })
     fireEvent.change(screen.getByLabelText('PIN'), { target: { value: '1234' } })
     fireEvent.click(screen.getByRole('button', { name: 'Login' }))
-    expect(await heading(/^home$/i)).toBeTruthy()
+    expect(await heading(/^asha$/i)).toBeTruthy()
   })
 
   it('offers retry and logout when the account cannot be loaded', async () => {

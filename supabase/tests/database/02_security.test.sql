@@ -465,7 +465,11 @@ select is(
   1::bigint,
   '5: admin can read any user''s records'
 );
-select is((select count(*) from public.recommendation_processing_users), 1::bigint, '5: admin can inspect AI processing');
+select is(
+  (select count(*) from public.recommendation_processing_users where user_id = '00000000-0000-0000-0000-0000000000a1'),
+  1::bigint,
+  '5: admin can inspect AI processing (scoped to fixture user; other local data may exist)'
+);
 
 select set_config('app.audit_reason', 'Wrong calories entered', true);
 select lives_ok(

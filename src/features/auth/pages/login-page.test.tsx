@@ -1,3 +1,4 @@
+import '@/test/mock-home-data'
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -45,7 +46,7 @@ describe('LoginPage', () => {
   it('submits the normalized phone number', async () => {
     const { signIn } = renderApp({ path: '/login', state: signedOut() })
     await fillAndSubmit('+91 98765-43210', SECRET_PIN)
-    expect(await screen.findByRole('heading', { level: 1, name: /home/i })).toBeTruthy()
+    expect(await screen.findByRole('heading', { level: 1, name: /^asha$/i })).toBeTruthy()
     expect(signIn).toHaveBeenCalledWith({ phone: '+919876543210', pin: SECRET_PIN })
   })
 

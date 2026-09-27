@@ -96,10 +96,13 @@ export function MetricBlock({
       <LabelLine label={label} icon={icon} meta={meta} />
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <Metric value={value} fractionDigits={fractionDigits} size={size} />
-        <span className="label-mono text-muted-foreground">
-          {hasTarget ? `/ ${formatNumber(target, fractionDigits)}` : ''}
-          {unit ? ` ${unit}` : ''}
-        </span>
+        {/* A bare unit next to a missing value says nothing, so it is omitted. */}
+        {(hasTarget || value !== null) && (
+          <span className="label-mono text-muted-foreground">
+            {hasTarget ? `/ ${formatNumber(target, fractionDigits)}` : ''}
+            {unit ? ` ${unit}` : ''}
+          </span>
+        )}
       </div>
       {hasTarget && showProgress && (
         <ProgressBar

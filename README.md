@@ -5,8 +5,9 @@ activities, steps and weight, and review monthly recommendation cycles. It's a t
 analysis tool, not an enforcement-based coach. The full product and technical specification is in
 [`spec.md`](./spec.md).
 
-> **Status:** Foundation, database with RLS, and phone + PIN login with first-time onboarding
-> are in place. Feature pages (Home, Food, …) are placeholders.
+> **Status:** Foundation, database with RLS, phone + PIN login with onboarding, the design
+> system and shell, and the Home dashboard are in place. Food, Workout, Progress, Groups,
+> Profile and Admin are placeholders.
 
 ## Tech stack
 
@@ -76,6 +77,10 @@ at startup.
 
 Tokens, typography, components and shell conventions: [`docs/design-system.md`](./docs/design-system.md).
 Development-only live reference at `/dev/design-system`.
+
+## Home
+
+Data sources and rules for the Home dashboard: [`docs/home.md`](./docs/home.md).
 
 ## Database
 

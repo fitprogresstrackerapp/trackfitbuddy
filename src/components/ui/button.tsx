@@ -24,7 +24,7 @@ const buttonVariants = cva(
         ghost: 'text-foreground-secondary hover:bg-surface-2 hover:text-foreground',
         destructive:
           'border border-destructive/40 bg-destructive/12 text-destructive hover:bg-destructive/20',
-        link: 'h-auto px-0 text-primary normal-case underline-offset-4 hover:underline',
+        link: 'text-primary normal-case underline-offset-4 hover:underline',
       },
       size: {
         sm: 'h-8 px-3 text-[0.6875rem]',
@@ -34,6 +34,8 @@ const buttonVariants = cva(
         'icon-sm': 'size-8',
       },
     },
+    // Links are inline text: no box height or padding, whatever the size.
+    compoundVariants: [{ variant: 'link', class: 'h-auto px-0' }],
     defaultVariants: {
       variant: 'primary',
       size: 'md',

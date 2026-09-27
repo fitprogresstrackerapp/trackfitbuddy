@@ -22,3 +22,15 @@ export const ROUTES = {
 } as const
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]
+
+/**
+ * Entry points for logging actions. The target pages read `?add=` once their
+ * logging flows exist (Food, Workout/Activity prompts); until then they open
+ * the section placeholder. Activities and steps are logged from the training
+ * area (spec §8 has no separate Activity section).
+ */
+export const ADD_ACTION_ROUTES = {
+  food: `${ROUTES.food}?add=meal`,
+  workout: `${ROUTES.workout}?add=workout`,
+  activity: `${ROUTES.workout}?add=activity`,
+} as const

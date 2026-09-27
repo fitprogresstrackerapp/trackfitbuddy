@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
 import { useMemo, useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -80,12 +81,16 @@ export function renderApp({ path, state, afterSignIn, signInError }: HarnessOpti
     )
 
     return (
-      <AuthContext.Provider value={value}>
-        <RouterProvider router={router} />
-      </AuthContext.Provider>
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider value={value}>
+          <RouterProvider router={router} />
+        </AuthContext.Provider>
+      </QueryClientProvider>
     )
   }
 
+  // Fresh cache per render; no retries so error states appear immediately.
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(<Harness />)
   return { signIn, signOut, refreshAccount }
 }
