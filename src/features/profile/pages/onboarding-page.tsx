@@ -65,7 +65,7 @@ export function OnboardingPage() {
           <p className="text-sm">Complete your profile to continue.</p>
         </div>
 
-        <h1 className="metric text-4xl text-foreground uppercase">{current.title}</h1>
+        <h1 className="heading-page text-foreground">{current.title}</h1>
       </header>
 
       {step === 1 ? (

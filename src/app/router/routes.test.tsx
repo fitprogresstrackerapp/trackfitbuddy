@@ -78,12 +78,42 @@ describe('signed in with a complete profile', () => {
   it('a regular user cannot open Admin', async () => {
     renderApp({ path: '/admin', state: signedIn(makeAccount({ roles: ['USER', 'MANAGER'] })) })
     expect(await heading(/^home$/i)).toBeTruthy()
-    expect(screen.queryByText(/admin dashboard/i)).toBeNull()
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull()
   })
 
   it.each([['ADMIN' as const], ['SUPER_ADMIN' as const]])('%s can open Admin', async (role) => {
     renderApp({ path: '/admin', state: signedIn(makeAccount({ roles: ['USER', role] })) })
-    expect(await heading(/admin dashboard/i)).toBeTruthy()
+    expect(await heading(/^dashboard$/i)).toBeTruthy()
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent).toContain('Admin')
+  })
+
+  it.each([
+    ['/admin/users', /^users$/i],
+    ['/admin/foods', /^food database$/i],
+    ['/admin/settings', /^system settings$/i],
+  ])('admin section %s renders inside the admin shell', async (path, title) => {
+    renderApp({ path, state: signedIn(makeAccount({ roles: ['USER', 'ADMIN'] })) })
+    expect(await heading(title)).toBeTruthy()
+    expect(screen.getAllByRole('navigation', { name: 'Admin' }).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).toBeNull()
+  })
+
+  it('shows the admin entry only to admins', async () => {
+    renderApp({ path: '/', state: signedIn(makeAccount({ roles: ['USER', 'ADMIN'] })) })
+    expect(await screen.findByRole('link', { name: 'Admin' })).toBeTruthy()
+    cleanup()
+    renderApp({ path: '/', state: signedIn() })
+    await heading(/^home$/i)
+    expect(screen.queryByRole('link', { name: 'Admin' })).toBeNull()
+  })
+
+  it('marks the current section in the navigation', async () => {
+    renderApp({ path: '/food', state: signedIn() })
+    await heading(/^food$/i)
+    const current = screen
+      .getAllByRole('link', { name: /food/i })
+      .filter((link) => link.getAttribute('aria-current') === 'page')
+    expect(current.length).toBeGreaterThan(0)
   })
 
   it('logout removes access and shows Login', async () => {

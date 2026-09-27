@@ -1,6 +1,6 @@
-import { PlaceholderPage } from '@/components/common/placeholder-page'
-import { ICONS } from '@/constants/icons'
+import { SectionPlaceholder } from '@/components/common/placeholder-page'
+import { ROUTES } from '@/constants/routes'
 
 export function GroupsPage() {
-  return <PlaceholderPage title="Groups" icon={ICONS.groups} />
+  return <SectionPlaceholder route={ROUTES.groups} eyebrow="Shared" />
 }

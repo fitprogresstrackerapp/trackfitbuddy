@@ -36,7 +36,7 @@ export class AppErrorBoundary extends Component<Props, State> {
             description={this.state.error.message}
             action={
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   window.location.reload()

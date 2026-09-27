@@ -30,7 +30,7 @@ function AccountLoadError({ retry }: { retry: () => void }) {
         description="Check your connection and try again."
         action={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={retry}>
+            <Button variant="secondary" size="sm" onClick={retry}>
               Retry
             </Button>
             <Button variant="ghost" size="sm" onClick={() => void signOut()}>

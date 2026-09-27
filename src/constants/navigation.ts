@@ -1,4 +1,11 @@
-import type { LucideIcon } from 'lucide-react'
+import {
+  ClipboardList,
+  Cpu,
+  LayoutDashboard,
+  ScrollText,
+  UserCog,
+  type LucideIcon,
+} from 'lucide-react'
 
 import { ICONS } from './icons'
 import { ROUTES, type AppRoute } from './routes'
@@ -7,20 +14,120 @@ export interface NavItem {
   label: string
   to: AppRoute
   icon: LucideIcon
+  /** One-line purpose, used by placeholders and page context. */
+  description?: string
 }
 
-/** Primary sections (spec §8). Mobile bottom nav + desktop sidebar. */
+/** Primary sections (spec §8): sidebar on desktop, rail on tablet, bottom nav on mobile. */
 export const PRIMARY_NAV: readonly NavItem[] = [
-  { label: 'Home', to: ROUTES.home, icon: ICONS.home },
-  { label: 'Food', to: ROUTES.food, icon: ICONS.food },
-  { label: 'Workout', to: ROUTES.workout, icon: ICONS.workout },
-  { label: 'Progress', to: ROUTES.progress, icon: ICONS.progress },
-  { label: 'Groups', to: ROUTES.groups, icon: ICONS.groups },
+  {
+    label: 'Home',
+    to: ROUTES.home,
+    icon: ICONS.home,
+    description: 'Today’s nutrition, training and what to do next.',
+  },
+  {
+    label: 'Food',
+    to: ROUTES.food,
+    icon: ICONS.food,
+    description: 'Track meals, nutrition and daily intake.',
+  },
+  {
+    label: 'Workout',
+    to: ROUTES.workout,
+    icon: ICONS.workout,
+    description: 'Log sessions and follow weekly training frequency.',
+  },
+  {
+    label: 'Progress',
+    to: ROUTES.progress,
+    icon: ICONS.progress,
+    description: 'Body, nutrition and training trends over time.',
+  },
+  {
+    label: 'Groups',
+    to: ROUTES.groups,
+    icon: ICONS.groups,
+    description: 'Shared daily progress with the people you train with.',
+  },
 ]
 
-/** Shown below the divider on desktop; top-right control on mobile. */
+/** Separated from the primary sections (spec §8). */
 export const PROFILE_NAV: NavItem = {
   label: 'Profile',
   to: ROUTES.profile,
   icon: ICONS.profile,
+  description: 'Your details, goals and account.',
+}
+
+/** Admin entry point, shown only to ADMIN / SUPER_ADMIN (UI gating only). */
+export const ADMIN_ENTRY: NavItem = { label: 'Admin', to: ROUTES.admin, icon: ICONS.admin }
+
+/** Admin sections (spec §78). Separate from the user navigation. */
+export const ADMIN_NAV: readonly NavItem[] = [
+  {
+    label: 'Dashboard',
+    to: ROUTES.admin,
+    icon: LayoutDashboard,
+    description: 'Active users, processing status, AI spend and pending reviews.',
+  },
+  {
+    label: 'Users',
+    to: ROUTES.adminUsers,
+    icon: ICONS.groups,
+    description: 'Create, edit and deactivate users; reset PINs.',
+  },
+  {
+    label: 'Managers',
+    to: ROUTES.adminManagers,
+    icon: UserCog,
+    description: 'Manager / trainer assignments.',
+  },
+  {
+    label: 'Groups',
+    to: ROUTES.adminGroups,
+    icon: ICONS.goals,
+    description: 'Group oversight.',
+  },
+  {
+    label: 'Food Database',
+    to: ROUTES.adminFoods,
+    icon: ICONS.food,
+    description: 'Shared foods, submissions, duplicates and merges.',
+  },
+  {
+    label: 'Monthly Processing',
+    to: ROUTES.adminProcessing,
+    icon: ClipboardList,
+    description: 'Recommendation processing runs and per-user status.',
+  },
+  {
+    label: 'AI Usage',
+    to: ROUTES.adminAiUsage,
+    icon: Cpu,
+    description: 'Requests, tokens and cost by model, run and user.',
+  },
+  {
+    label: 'Audit Logs',
+    to: ROUTES.adminAudit,
+    icon: ScrollText,
+    description: 'Administrative changes and corrections.',
+  },
+  {
+    label: 'System Settings',
+    to: ROUTES.adminSettings,
+    icon: ICONS.settings,
+    description: 'Tolerances, AI budget and processing configuration.',
+  },
+]
+
+/** The nav item whose section contains `pathname` (longest match wins). */
+export function findNavItem(items: readonly NavItem[], pathname: string): NavItem | undefined {
+  return [...items]
+    .sort((a, b) => b.to.length - a.to.length)
+    .find((item) =>
+      item.to === '/'
+        ? pathname === '/'
+        : pathname === item.to || pathname.startsWith(`${item.to}/`),
+    )
 }

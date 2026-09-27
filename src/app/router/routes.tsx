@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router'
 
 import { PageLoader } from '@/components/common/loading-state'
+import { ADMIN_NAV } from '@/constants/navigation'
 import { ROUTES } from '@/constants/routes'
 import { LoginPage } from '@/features/auth/pages/login-page'
 import { ADMIN_ROLES } from '@/features/auth/lib/roles'
@@ -36,6 +37,29 @@ import { RouteErrorPage } from './route-error-page'
  *
  * Guards only decide what to render. Data access is enforced by Supabase RLS.
  */
+
+/** Admin screens are lazy-loaded (spec §83). */
+async function loadAdminSection() {
+  const { AdminSectionPage } = await import('@/features/admin/pages/admin-section-page')
+  return { Component: AdminSectionPage }
+}
+
+/**
+ * Development-only routes. `import.meta.env.DEV` is statically false in
+ * production builds, so these routes and their chunks are not shipped.
+ */
+const devRoutes: RouteObject[] = import.meta.env.DEV
+  ? [
+      {
+        path: ROUTES.designSystem,
+        lazy: async () => {
+          const { DesignSystemPage } = await import('@/features/design-system/design-system-page')
+          return { Component: DesignSystemPage }
+        },
+      },
+    ]
+  : []
+
 export const appRoutes: RouteObject[] = [
   {
     Component: RootLayout,
@@ -80,17 +104,11 @@ export const appRoutes: RouteObject[] = [
                   {
                     path: ROUTES.admin,
                     Component: AdminLayout,
-                    children: [
-                      {
-                        // Admin screens are lazy-loaded (spec §83).
-                        index: true,
-                        lazy: async () => {
-                          const { AdminDashboardPage } =
-                            await import('@/features/admin/pages/admin-dashboard-page')
-                          return { Component: AdminDashboardPage }
-                        },
-                      },
-                    ],
+                    children: ADMIN_NAV.map((item) =>
+                      item.to === ROUTES.admin
+                        ? { index: true, lazy: loadAdminSection }
+                        : { path: item.to.slice(ROUTES.admin.length + 1), lazy: loadAdminSection },
+                    ),
                   },
                 ],
               },
@@ -98,6 +116,7 @@ export const appRoutes: RouteObject[] = [
           },
         ],
       },
+      ...devRoutes,
       { path: '*', Component: NotFoundPage },
     ],
   },

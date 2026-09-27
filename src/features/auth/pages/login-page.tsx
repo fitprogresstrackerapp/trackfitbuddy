@@ -58,7 +58,7 @@ export function LoginPage() {
     <div className="flex flex-col gap-8">
       <header className="space-y-3">
         <p className="label-mono text-muted-foreground">Phone + PIN</p>
-        <h1 className="metric text-5xl text-foreground uppercase">Log in</h1>
+        <h1 className="heading-page text-foreground">Log in</h1>
         <p className="text-sm text-foreground-secondary">
           Use the phone number and PIN provided by your admin.
         </p>

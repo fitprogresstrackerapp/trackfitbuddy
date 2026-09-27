@@ -72,6 +72,11 @@ at startup.
 | `npm run db:lint`          | Lint database functions                        |
 | `npm run db:types`         | Regenerate `src/types/database.ts`             |
 
+## Design system
+
+Tokens, typography, components and shell conventions: [`docs/design-system.md`](./docs/design-system.md).
+Development-only live reference at `/dev/design-system`.
+
 ## Database
 
 Schema, RLS, historical snapshots, locking and audit are documented in
@@ -86,8 +91,10 @@ src/
 │   ├── providers/     global providers (error boundary, TanStack Query)
 │   └── layouts/       root, auth, app (sidebar / top bar / bottom nav), admin
 ├── components/
-│   ├── ui/            shadcn/ui primitives
-│   ├── common/        page structure, loading / empty / error states
+│   ├── ui/            controls (shadcn/Radix, restyled)
+│   ├── layout/        Page, Section, Panel, Divider, Breadcrumb
+│   ├── data/          Metric, DataRow, ProgressBar, StatusBadge, TrendIndicator
+│   ├── common/        states (empty / error / loading), form helpers
 │   └── charts/        Recharts theme derived from tokens
 ├── features/<name>/   feature-owned pages, components, hooks, types
 ├── lib/               env validation, typed Supabase client, query client, utils
@@ -99,8 +106,8 @@ src/
 - **Routes** are grouped by access level (guest, onboarding, user app, admin) behind guards
   in `src/app/router/guards.tsx`. Security is enforced by Supabase RLS, not by routing.
 - **Admin screens** are lazy-loaded.
-- **Layout:** below `lg`, a top bar with the profile control plus a fixed bottom nav; at `lg`
-  and up, a persistent sidebar and a wider content area.
+- **Layout:** mobile top bar + bottom nav (< 768px), icon rail (768–1023px), full sidebar
+  (≥ 1024px); content width is capped.
 - **Design tokens:** every colour comes from `@theme` tokens (`bg-surface-1`,
   `text-foreground-secondary`, `text-primary`, …). Typography utilities are `metric`
   (condensed display numbers), `label-mono` (dates and status metadata) and `label-section`.

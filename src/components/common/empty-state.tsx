@@ -11,20 +11,26 @@ interface EmptyStateProps {
   className?: string
 }
 
+/**
+ * Compact "nothing here yet" block:
+ *   NO RECORDS
+ *   Nothing has been logged for this period.
+ *   [ Add food ]
+ */
 export function EmptyState({ title, description, icon: Icon, action, className }: EmptyStateProps) {
   return (
     <div
       className={cn(
-        'flex flex-col items-start gap-3 rounded-md border border-dashed border-border px-5 py-8',
+        'flex flex-col items-start gap-3 rounded-md border border-dashed border-border px-5 py-6',
         className,
       )}
     >
-      {Icon && <Icon aria-hidden="true" className="size-5 text-muted-foreground" />}
-      <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        {Icon && <Icon aria-hidden="true" className="size-4 text-muted-foreground" />}
         <p className="label-section text-foreground">{title}</p>
-        {description && <p className="text-sm text-foreground-secondary">{description}</p>}
       </div>
-      {action}
+      {description && <p className="text-sm text-foreground-secondary">{description}</p>}
+      {action && <div className="pt-1">{action}</div>}
     </div>
   )
 }

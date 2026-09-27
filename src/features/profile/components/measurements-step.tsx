@@ -87,7 +87,7 @@ export function MeasurementsStep({ initialHeightCm, onBack, onSubmit }: Measurem
       {saveError && <InlineAlert>{saveError}</InlineAlert>}
 
       <div className="flex gap-3">
-        <Button type="button" variant="outline" size="lg" onClick={onBack} disabled={saving}>
+        <Button type="button" variant="secondary" size="lg" onClick={onBack} disabled={saving}>
           Back
         </Button>
         <Button type="submit" size="lg" className="flex-1" disabled={saving}>

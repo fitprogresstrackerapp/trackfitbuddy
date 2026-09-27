@@ -12,8 +12,8 @@ export function AdornedInput({ leading, trailing, className, ...props }: Adorned
   return (
     <div
       className={cn(
-        'flex h-11 w-full items-stretch overflow-hidden rounded-md border border-input bg-surface-1 transition-colors',
-        'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30',
+        'flex h-10 w-full items-stretch overflow-hidden rounded-sm border border-input bg-surface-1 transition-[border-color,box-shadow] duration-150 hover:border-foreground-secondary/30',
+        'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/25',
         'has-[input[aria-invalid=true]]:border-destructive',
         className,
       )}

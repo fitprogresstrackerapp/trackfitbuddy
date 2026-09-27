@@ -1,26 +1,24 @@
-import { EmptyState } from '@/components/common/empty-state'
-import { Page, PageHeader, Section } from '@/components/common/page'
-import { ICONS } from '@/constants/icons'
-import { LogoutButton } from '@/features/auth/components/logout-button'
-import { formatIndianPhone } from '@/features/auth/lib/phone'
+import { PlaceholderPage } from '@/components/common/placeholder-page'
+import { Section } from '@/components/layout/page'
+import { PROFILE_NAV } from '@/constants/navigation'
 import { useAccount } from '@/features/auth/auth-context'
+import { LogoutButton } from '@/features/auth/components/logout-button'
 
+/** Placeholder until profile editing is built. Logout is real and stays here. */
 export function ProfilePage() {
   const { profile } = useAccount()
 
   return (
-    <Page>
-      <PageHeader eyebrow={formatIndianPhone(profile.phone)} title={profile.name ?? 'Profile'} />
-      <EmptyState
-        icon={ICONS.profile}
-        title="Not built yet"
-        description="Profile details are implemented in a later phase."
-      />
+    <PlaceholderPage
+      title={profile.name ?? PROFILE_NAV.label}
+      eyebrow="Account"
+      {...(PROFILE_NAV.description ? { description: PROFILE_NAV.description } : {})}
+    >
       <Section title="Session">
         <div>
-          <LogoutButton variant="outline" />
+          <LogoutButton variant="secondary" />
         </div>
       </Section>
-    </Page>
+    </PlaceholderPage>
   )
 }

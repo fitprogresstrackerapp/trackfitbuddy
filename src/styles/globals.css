@@ -72,13 +72,109 @@
   --radius-xl: 8px;
   --radius-2xl: 8px;
 
-  /* Layout */
-  --spacing-sidebar: 15rem;
-  --spacing-bottom-nav: 4rem;
+  /* Layout
+   *   < md (768)   mobile: top bar + bottom nav
+   *   md – lg      tablet: top bar + icon rail
+   *   ≥ lg (1024)  desktop: full sidebar
+   */
+  --spacing-sidebar: 14.5rem;
+  --spacing-rail: 4.5rem;
+  --spacing-bottom-nav: 3.75rem;
   --spacing-top-bar: 3.5rem;
+  --container-content: 70rem;
 
-  /* Motion — restrained */
+  /* Motion — restrained: state changes and overlay entrances only. */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --animate-overlay-in: fade-in 160ms var(--ease-standard);
+  --animate-overlay-out: fade-out 120ms var(--ease-standard);
+  --animate-dialog-in: dialog-in 180ms var(--ease-standard);
+  --animate-dialog-out: dialog-out 120ms var(--ease-standard);
+  --animate-sheet-in-bottom: sheet-in-bottom 220ms var(--ease-standard);
+  --animate-sheet-out-bottom: sheet-out-bottom 160ms var(--ease-standard);
+  --animate-sheet-in-right: sheet-in-right 220ms var(--ease-standard);
+  --animate-sheet-out-right: sheet-out-right 160ms var(--ease-standard);
+  --animate-menu-in: menu-in 120ms var(--ease-standard);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, calc(-50% + 6px));
+    }
+  }
+  @keyframes dialog-out {
+    to {
+      opacity: 0;
+      transform: translate(-50%, calc(-50% + 6px));
+    }
+  }
+  @keyframes sheet-in-bottom {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes sheet-out-bottom {
+    to {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes sheet-in-right {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes sheet-out-right {
+    to {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+}
+
+/*
+ * Typography scale (use these instead of ad-hoc font classes):
+ *   metric         display numbers — calories, weight, steps, percentages
+ *   heading-page   page titles — HOME, FOOD, WORKOUT …
+ *   heading-block  block / panel titles inside a page
+ *   label-section  section labels and form labels (small caps, sans)
+ *   label-mono     metadata — SEP 21, CYCLE 03, TARGET, SYNCED, 7D
+ *   body text      plain Tailwind text-sm / text-base in sans
+ */
+
+/* Page title: condensed display face, uppercase. */
+@utility heading-page {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  @media (width >= 64rem) {
+    font-size: 2.5rem;
+  }
+}
+
+/* Title of a block, panel or dialog: sans, semibold. */
+@utility heading-block {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
 }
 
 /* Monospace metadata label: dates, cycle ids, TARGET, SYNCED. Use sparingly. */

@@ -30,7 +30,7 @@ export function RouteErrorPage() {
         className="w-full"
         description={describeError(error)}
         action={
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="secondary" size="sm">
             <Link to={ROUTES.home}>Go home</Link>
           </Button>
         }

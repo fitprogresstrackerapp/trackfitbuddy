@@ -1,6 +1,6 @@
-import { PlaceholderPage } from '@/components/common/placeholder-page'
-import { ICONS } from '@/constants/icons'
+import { SectionPlaceholder } from '@/components/common/placeholder-page'
+import { ROUTES } from '@/constants/routes'
 
 export function ProgressPage() {
-  return <PlaceholderPage title="Progress" icon={ICONS.progress} />
+  return <SectionPlaceholder route={ROUTES.progress} eyebrow="Trends" />
 }

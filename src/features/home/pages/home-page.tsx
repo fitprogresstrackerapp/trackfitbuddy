@@ -1,6 +1,6 @@
-import { PlaceholderPage } from '@/components/common/placeholder-page'
-import { ICONS } from '@/constants/icons'
+import { SectionPlaceholder } from '@/components/common/placeholder-page'
+import { ROUTES } from '@/constants/routes'
 
 export function HomePage() {
-  return <PlaceholderPage title="Home" icon={ICONS.home} />
+  return <SectionPlaceholder route={ROUTES.home} eyebrow="Today" />
 }

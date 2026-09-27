@@ -1,28 +1,16 @@
 import { LogOut } from 'lucide-react'
-import { useState, type ComponentProps } from 'react'
-import { useNavigate } from 'react-router'
+import type { ComponentProps } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { ROUTES } from '@/constants/routes'
 
-import { useAuth } from '../auth-context'
+import { useLogout } from '../hooks/use-logout'
 
 type LogoutButtonProps = Omit<ComponentProps<typeof Button>, 'onClick' | 'children'>
 
-/** Ends the session, clears cached user data and replaces history with Login. */
 export function LogoutButton({ disabled, ...props }: LogoutButtonProps) {
-  const { signOut } = useAuth()
-  const navigate = useNavigate()
-  const [pending, setPending] = useState(false)
-
-  async function handleClick() {
-    setPending(true)
-    await signOut()
-    void navigate(ROUTES.login, { replace: true })
-  }
-
+  const { logout, pending } = useLogout()
   return (
-    <Button {...props} disabled={disabled ?? pending} onClick={() => void handleClick()}>
+    <Button {...props} disabled={disabled ?? pending} onClick={() => void logout()}>
       <LogOut aria-hidden="true" />
       {pending ? 'Logging out…' : 'Log out'}
     </Button>
