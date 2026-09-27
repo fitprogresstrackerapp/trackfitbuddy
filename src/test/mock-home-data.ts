@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 
 /**
- * Stubs Home's and Food's data access so route/auth tests that land on those
+ * Stubs Home, Food and Training data access so route/auth tests that land on those
  * pages never hit the network. Import this module at the top of such tests.
  */
 vi.mock('@/features/home/api/home-data', () => ({
@@ -36,4 +36,18 @@ vi.mock('@/features/food/api/food-data', () => ({
   updateMealCategory: vi.fn(),
   copyMeal: vi.fn(),
   submitFood: vi.fn(),
+}))
+
+vi.mock('@/features/training/api/training-data', () => ({
+  fetchTrainingWeek: vi.fn(
+    (_client: unknown, _user: string, week: { start: string; end: string }) =>
+      Promise.resolve({ ...week, workouts: [], activities: [] }),
+  ),
+  fetchTrainingPlan: vi.fn(() => Promise.resolve({ capacity: null, cycle: null })),
+  fetchCalorieRates: vi.fn(() =>
+    Promise.resolve({ workout: { default: 6 }, activity: { default: 5 } }),
+  ),
+  logTraining: vi.fn(),
+  updateTraining: vi.fn(),
+  deleteTraining: vi.fn(),
 }))

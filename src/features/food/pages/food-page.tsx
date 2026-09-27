@@ -21,7 +21,7 @@ import { notify } from '@/lib/feedback'
 import { useDayMeals, useDayTargets, useFoodMutations, useMySubmissions } from '../api/food-queries'
 import { AddFoodSheet, type AddStart, type SaveMealInput } from '../components/add-food-sheet'
 import { CopyMealSheet } from '../components/copy-meal-sheet'
-import { DayNav } from '../components/day-nav'
+import { DayNav } from '@/components/common/day-nav'
 import {
   CategoryDialog,
   ConfirmDeleteMealDialog,

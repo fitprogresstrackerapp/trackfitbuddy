@@ -1,4 +1,5 @@
 import { evaluateNutrient } from '@/features/nutrition/lib/nutrition'
+import { nextSession as nextTemplateSession } from '@/features/training/lib/training'
 
 import type { DailyTargets, HomeNutrition, HomeTraining, PlanCycle } from '../types'
 
@@ -17,10 +18,7 @@ export {
   type NutrientStatus,
 } from '@/features/nutrition/lib/nutrition'
 
-/** Distinct days (up to and including today) with at least one valid workout. */
-export function countWorkoutDays(workoutDates: readonly string[], today: string): number {
-  return new Set(workoutDates.filter((date) => date <= today)).size
-}
+export { countWorkoutDays, isTransitionWeek } from '@/features/training/lib/training'
 
 export type PlanState =
   { kind: 'none' } | { kind: 'review'; until: string } | { kind: 'active'; since: string }
@@ -34,23 +32,9 @@ export function planState(cycle: PlanCycle | null, today: string): PlanState {
   return { kind: 'active', since: cycle.periodStart }
 }
 
-/**
- * True when the current recommendation cycle began inside this calendar week:
- * the week is a transition week and must not be judged as a full target week
- * (spec §17). Home then shows the count without a completion judgement.
- */
-export function isTransitionWeek(
-  cycle: PlanCycle | null,
-  week: { start: string; end: string },
-): boolean {
-  return Boolean(cycle && cycle.periodStart > week.start && cycle.periodStart <= week.end)
-}
-
 /** The next template session: sessions are done in order, on any days (spec §16). */
 export function nextSession(cycle: PlanCycle | null, workoutDaysThisWeek: number): string | null {
-  if (!cycle || cycle.sessions.length === 0) return null
-  if (workoutDaysThisWeek >= cycle.sessions.length) return null
-  return cycle.sessions[workoutDaysThisWeek] ?? null
+  return cycle ? nextTemplateSession(cycle.sessions, workoutDaysThisWeek) : null
 }
 
 export type NextActionTarget = 'food' | 'workout' | 'activity'

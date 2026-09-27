@@ -1,10 +1,9 @@
-import { z } from 'zod'
-
 import { calendarWeekOf } from '@/lib/dates/local-date'
 import type { AppSupabaseClient } from '@/lib/supabase/client'
 
 import { fetchTargetsForDate } from '@/features/nutrition/api/targets'
 import { sumNutrition } from '@/features/nutrition/lib/nutrition'
+import { parseWorkoutPlan } from '@/features/training/lib/training'
 
 import { countWorkoutDays } from '../lib/home-logic'
 import type { CycleGoal, HomeNutrition, HomePlan, HomeTraining, PlanCycle } from '../types'
@@ -16,21 +15,9 @@ import type { CycleGoal, HomeNutrition, HomePlan, HomeTraining, PlanCycle } from
  * (or this week's) rows are requested — never history.
  */
 
-/**
- * Workout template sessions from the recommendation's final plan. The plan
- * JSON contract belongs to the recommendation engine (later phase); this reads
- * only `sessions[].name` (or plain strings) and ignores anything else.
- */
-const workoutPlanSchema = z.object({
-  sessions: z.array(z.union([z.string(), z.looseObject({ name: z.string() })])),
-})
-
+/** Session names from the recommended workout template, in order. */
 function sessionNames(plan: unknown): string[] {
-  const parsed = workoutPlanSchema.safeParse(plan)
-  if (!parsed.success) return []
-  return parsed.data.sessions.map((session) =>
-    typeof session === 'string' ? session : session.name,
-  )
+  return parseWorkoutPlan(plan).map((session) => session.name)
 }
 
 /** Today's targets, the recommendation cycle covering today, and that cycle's goals. */

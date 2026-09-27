@@ -13,7 +13,9 @@ export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   CUSTOM: 'Custom',
 }
 
+/** The record's own name when it has one (always for CUSTOM), else its type. */
 export function activityLabel(type: string, customName: string | null): string {
-  if (type === 'CUSTOM' && customName) return customName
+  const name = customName?.trim() ?? ''
+  if (name.length > 0) return name
   return ACTIVITY_TYPE_LABELS[type] ?? type
 }

@@ -1,4 +1,4 @@
-import { addDays, isValidIsoDate } from '@/lib/dates/local-date'
+import { LATE_ENTRY_DAYS } from '@/lib/dates/day-param'
 
 import type { FoodOption, LoggedMeal, MealCategory } from '../types'
 
@@ -8,8 +8,7 @@ import type { FoodOption, LoggedMeal, MealCategory } from '../types'
  * how it previews values before saving.
  */
 
-/** How far back a missing meal can be added (mirrors log_meal). */
-export const LATE_ENTRY_DAYS = 90
+export { dayKind, LATE_ENTRY_DAYS, resolveDateParam, type DayKind } from '@/lib/dates/day-param'
 
 export const MEAL_CATEGORIES: readonly { value: MealCategory; label: string }[] = [
   { value: 'BREAKFAST', label: 'Breakfast' },
@@ -26,28 +25,6 @@ export function mealLabel(meal: Pick<LoggedMeal, 'category' | 'name'>): string {
   if (meal.category) return categoryLabel(meal.category)
   const name = meal.name?.trim() ?? ''
   return name.length > 0 ? name : 'Meal'
-}
-
-export type DayKind = { kind: 'today' } | { kind: 'past'; lateEntry: boolean } | { kind: 'future' }
-
-/** What the viewed day allows: today = full logging; past = late entry only. */
-export function dayKind(date: string, today: string): DayKind {
-  if (date === today) return { kind: 'today' }
-  if (date > today) return { kind: 'future' }
-  return { kind: 'past', lateEntry: date >= addDays(today, -LATE_ENTRY_DAYS) }
-}
-
-/**
- * The `?date=` parameter, validated. Missing, malformed or future dates fall
- * back to today (food cannot be logged ahead of time).
- */
-export function resolveDateParam(
-  raw: string | null,
-  today: string,
-): { date: string; valid: boolean } {
-  if (raw === null) return { date: today, valid: true }
-  if (!isValidIsoDate(raw) || raw > today) return { date: today, valid: false }
-  return { date: raw, valid: true }
 }
 
 /** Only today's unlocked meals can be changed (the database enforces the same). */

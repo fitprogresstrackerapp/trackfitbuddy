@@ -18,7 +18,9 @@ export const WORKOUT_TYPE_LABELS: Record<string, string> = {
   CUSTOM: 'Custom',
 }
 
+/** The record's own name when it has one (always for CUSTOM), else its type. */
 export function workoutLabel(type: string, customName: string | null): string {
-  if (type === 'CUSTOM' && customName) return customName
+  const name = customName?.trim() ?? ''
+  if (name.length > 0) return name
   return WORKOUT_TYPE_LABELS[type] ?? type
 }

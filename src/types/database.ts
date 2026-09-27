@@ -2840,6 +2840,16 @@ export type Database = {
           workout_logged: boolean
         }[]
       }
+      log_activity: {
+        Args: {
+          p_date: string
+          p_duration_minutes: number
+          p_manual_calories?: number
+          p_name?: string
+          p_type: string
+        }
+        Returns: string
+      }
       log_meal: {
         Args: {
           p_copied_from_meal_id?: string
@@ -2847,6 +2857,16 @@ export type Database = {
           p_meal_category?: Database['public']['Enums']['meal_category']
           p_meal_date: string
           p_meal_name?: string
+        }
+        Returns: string
+      }
+      log_workout: {
+        Args: {
+          p_date: string
+          p_duration_minutes: number
+          p_manual_calories?: number
+          p_name?: string
+          p_type: string
         }
         Returns: string
       }
@@ -2875,6 +2895,7 @@ export type Database = {
           use_count: number
         }[]
       }
+      training_calorie_rates: { Args: Record<PropertyKey, never>; Returns: Json }
     }
     Enums: {
       activity_level:

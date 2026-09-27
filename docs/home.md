@@ -44,8 +44,9 @@ are no URL parameters.
 - **Invalidation:** after logging food, workouts, activities or steps, invalidate
   `homeKeys.all(userId)` (`src/features/home/api/home-queries.ts`).
 - **Logging entry points:** `ADD_ACTION_ROUTES` in `src/constants/routes.ts`
-  (`/food?add=meal`, `/workout?add=workout`, `/workout?add=activity`). The Food and Workout
-  features should read the `add` parameter.
-- **Workout plan JSON:** Home reads only `workout_plan_json.sessions[].name` (or plain
-  strings) to show the next template session. The recommendation engine owns the full
+  (`/food?add=meal`, `/workout?add=workout`, `/workout?add=activity`). Food and Workout
+  read the `add` parameter and open the matching form.
+- **Workout plan JSON:** Home reads only the session names from `workout_plan_json.sessions`
+  (via `parseWorkoutPlan` in `src/features/training`, shared with Workout) to show the next
+  template session. The recommendation engine owns the full
   contract.
