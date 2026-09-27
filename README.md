@@ -5,8 +5,8 @@ activities, steps and weight, and review monthly recommendation cycles. It's a t
 analysis tool, not an enforcement-based coach. The full product and technical specification is in
 [`spec.md`](./spec.md).
 
-> **Status:** Phase 0 (foundation). Routing, layout shell, design tokens and providers are in
-> place. Feature pages are placeholders.
+> **Status:** Phase 0 (foundation). Routing, layout shell, design tokens, providers, and the
+> database schema with RLS are in place. Feature pages are placeholders.
 
 ## Tech stack
 
@@ -43,15 +43,25 @@ descriptive configuration error if the variables are missing.
 
 ## Scripts
 
-| Command                | Purpose                            |
-| ---------------------- | ---------------------------------- |
-| `npm run dev`          | Start the dev server               |
-| `npm run build`        | Type-check and build to `dist/`    |
-| `npm run preview`      | Serve the production build locally |
-| `npm run typecheck`    | TypeScript project check           |
-| `npm run lint`         | ESLint (type-aware)                |
-| `npm run format`       | Format with Prettier               |
-| `npm run format:check` | Verify formatting                  |
+| Command                | Purpose                             |
+| ---------------------- | ----------------------------------- |
+| `npm run dev`          | Start the dev server                |
+| `npm run build`        | Type-check and build to `dist/`     |
+| `npm run preview`      | Serve the production build locally  |
+| `npm run typecheck`    | TypeScript project check            |
+| `npm run lint`         | ESLint (type-aware)                 |
+| `npm run format`       | Format with Prettier                |
+| `npm run format:check` | Verify formatting                   |
+| `npm run db:start`     | Start local Postgres (needs Docker) |
+| `npm run db:reset`     | Recreate DB from migrations         |
+| `npm run db:test`      | Run database / RLS tests (pgTAP)    |
+| `npm run db:lint`      | Lint database functions             |
+| `npm run db:types`     | Regenerate `src/types/database.ts`  |
+
+## Database
+
+Schema, RLS, historical snapshots, locking and audit are documented in
+[`docs/database.md`](./docs/database.md). Migrations live in `supabase/migrations/`.
 
 ## Architecture
 
@@ -66,7 +76,8 @@ src/
 │   ├── common/        page structure, loading / empty / error states
 │   └── charts/        Recharts theme derived from tokens
 ├── features/<name>/   feature-owned pages, components, hooks, types
-├── lib/               env validation, Supabase client, query client, utils
+├── lib/               env validation, typed Supabase client, query client, utils
+├── types/             generated database types
 ├── constants/         routes, navigation, icon mapping, app name
 └── styles/            globals.css (Tailwind + design tokens)
 ```

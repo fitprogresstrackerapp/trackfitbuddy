@@ -1,0 +1,5 @@
+-- Development seed data.
+--
+-- Intentionally empty: no fake users or health measurements (they could be
+-- mistaken for real data). Required configuration (system_settings defaults)
+-- is created by migrations, not seeds.

@@ -10,7 +10,13 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:start": "supabase db start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:lint": "supabase db lint --level warning",
+    "db:types": "supabase gen types typescript --local --schema public > src/types/database.ts && prettier --write src/types/database.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -43,6 +49,7 @@
     "globals": "^17.12.0",
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "supabase": "^2.118.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1",
