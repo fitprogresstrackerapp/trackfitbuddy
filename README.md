@@ -6,8 +6,8 @@ analysis tool, not an enforcement-based coach. The full product and technical sp
 [`spec.md`](./spec.md).
 
 > **Status:** Foundation, database with RLS, phone + PIN login with onboarding, the design
-> system and shell, and the Home dashboard are in place. Food, Workout, Progress, Groups,
-> Profile and Admin are placeholders.
+> system and shell, the Home dashboard and Food & Nutrition tracking are in place. Workout,
+> Progress, Groups, Profile and Admin are placeholders.
 
 ## Tech stack
 
@@ -81,6 +81,10 @@ Development-only live reference at `/dev/design-system`.
 ## Home
 
 Data sources and rules for the Home dashboard: [`docs/home.md`](./docs/home.md).
+
+## Food
+
+Logging, search, snapshots, locking, late entry and copy: [`docs/food.md`](./docs/food.md).
 
 ## Database
 

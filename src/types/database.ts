@@ -2794,6 +2794,7 @@ export type Database = {
       }
     }
     Functions: {
+      add_meal_items: { Args: { p_items: Json; p_meal_id: string }; Returns: number }
       auth_set_pin: {
         Args: { p_actor_id?: string; p_pin: string; p_user_id: string }
         Returns: undefined
@@ -2803,6 +2804,26 @@ export type Database = {
         Returns: {
           status: string
           user_id: string
+        }[]
+      }
+      copy_meal: { Args: { p_source_meal_id: string; p_target_date: string }; Returns: string }
+      food_usage: {
+        Args: { p_limit?: number; p_order?: string }
+        Returns: {
+          calories: number
+          carbs_g: number
+          fat_g: number
+          fiber_g: number
+          id: string
+          is_approximate: boolean
+          last_used: string
+          name: string
+          protein_g: number
+          review_status: Database['public']['Enums']['food_review_status']
+          serving_quantity: number
+          serving_unit: string
+          source: string
+          use_count: number
         }[]
       }
       get_group_member_day: {
@@ -2819,9 +2840,40 @@ export type Database = {
           workout_logged: boolean
         }[]
       }
+      log_meal: {
+        Args: {
+          p_copied_from_meal_id?: string
+          p_items: Json
+          p_meal_category?: Database['public']['Enums']['meal_category']
+          p_meal_date: string
+          p_meal_name?: string
+        }
+        Returns: string
+      }
       save_onboarding_measurements: {
         Args: { p_height_cm: number; p_weight_kg: number }
         Returns: undefined
+      }
+      search_foods: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          calories: number
+          carbs_g: number
+          fat_g: number
+          fiber_g: number
+          id: string
+          is_approximate: boolean
+          last_used: string
+          match_rank: number
+          name: string
+          protein_g: number
+          review_status: Database['public']['Enums']['food_review_status']
+          serving_quantity: number
+          serving_unit: string
+          similarity: number
+          source: string
+          use_count: number
+        }[]
       }
     }
     Enums: {

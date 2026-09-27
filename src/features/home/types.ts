@@ -1,27 +1,9 @@
+import type { DailyTargets, NutritionTotals } from '@/features/nutrition/types'
 import type { Database } from '@/types/database'
 
 export type CycleStatus = Database['public']['Enums']['recommendation_cycle_status']
 
-export interface Tolerance {
-  /** Higher-is-better nutrients: met when actual ≥ target × nutrient. */
-  nutrient: number
-  /** Calories: acceptable when target × lower ≤ actual ≤ target × upper. */
-  calorieLower: number
-  calorieUpper: number
-}
-
-/** The food and training targets that apply today. */
-export interface DailyTargets {
-  calories: number
-  proteinG: number
-  carbsG: number
-  fatG: number
-  fiberG: number
-  workoutsPerWeek: number
-  /** Only known when today's target snapshot exists. */
-  tolerance: Tolerance | null
-  source: 'snapshot' | 'cycle'
-}
+export type { DailyTargets, NutritionTotals, Tolerance } from '@/features/nutrition/types'
 
 export interface PlanCycle {
   id: string
@@ -44,16 +26,6 @@ export interface HomePlan {
   targets: DailyTargets | null
   cycle: PlanCycle | null
   goal: CycleGoal | null
-}
-
-export interface NutritionTotals {
-  calories: number
-  proteinG: number
-  carbsG: number
-  fatG: number
-  fiberG: number
-  mealCount: number
-  itemCount: number
 }
 
 export interface HomeNutrition {
