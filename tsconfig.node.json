@@ -6,19 +6,26 @@
     "module": "ESNext",
     "types": ["node"],
     "skipLibCheck": true,
-
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    "noUncheckedIndexedAccess": true
   },
-  "include": ["vite.config.ts", "eslint.config.js"]
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.integration.config.ts",
+    "eslint.config.js",
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "supabase/functions/_shared/**/*.ts"
+  ]
 }

@@ -5,16 +5,17 @@ The PostgreSQL / Supabase data model, and the security model built on it. The SQ
 
 ## Migrations
 
-| File                                   | Contents                                                                                  |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `…0100_extensions_and_types.sql`       | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                         |
-| `…0200_profiles_roles_settings.sql`    | profiles, user_roles, manager assignments, system_settings, access helper functions       |
-| `…0300_goals_and_recommendations.sql`  | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots |
-| `…0400_food_and_meals.sql`             | food submissions, food items and versions, merges, meals, meal items (snapshots)          |
-| `…0500_training_and_body.sql`          | workouts, activities, steps, InBody reports/metrics, weight history                       |
-| `…0600_groups.sql`                     | groups, memberships, group helpers, `get_group_member_day()`                              |
-| `…0700_audit_and_record_integrity.sql` | audit log, record guard (locking and soft delete), audit triggers                         |
-| `…0800_rls_policies_and_views.sql`     | grants, RLS policies, read views                                                          |
+| File                                    | Contents                                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `…0100_extensions_and_types.sql`        | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                            |
+| `…0200_profiles_roles_settings.sql`     | profiles, user_roles, manager assignments, system_settings, access helper functions                          |
+| `…0300_goals_and_recommendations.sql`   | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                    |
+| `…0400_food_and_meals.sql`              | food submissions, food items and versions, merges, meals, meal items (snapshots)                             |
+| `…0500_training_and_body.sql`           | workouts, activities, steps, InBody reports/metrics, weight history                                          |
+| `…0600_groups.sql`                      | groups, memberships, group helpers, `get_group_member_day()`                                                 |
+| `…0700_audit_and_record_integrity.sql`  | audit log, record guard (locking and soft delete), audit triggers                                            |
+| `…0800_rls_policies_and_views.sql`      | grants, RLS policies, read views                                                                             |
+| `20260928000100_pin_authentication.sql` | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements` |
 
 ### Workflow
 
@@ -235,9 +236,23 @@ For updates, only the changed columns are stored. Callers can attach a reason wi
 - **`ai_monthly_budget`** defaults to null (not configured), so processing can't start
   until an admin sets a budget.
 
+## Authentication tables and functions
+
+Added in the authentication phase. See [`docs/auth.md`](./auth.md).
+
+- `private.user_pins` holds bcrypt PIN hashes, and `private.login_attempts` tracks
+  per-phone lockout. Neither is reachable through the Data API.
+- `auth_verify_pin` and `auth_set_pin` can be called by the service role only.
+  `auth_set_pin` writes a `CREATE` or `PIN_RESET` audit row with no PIN material.
+- `save_onboarding_measurements` runs as the caller, so RLS and the record guards apply.
+  It sets the height and records the initial weight as today's `MANUAL` measurement.
+  Repeat calls update that row instead of adding another.
+
 ## Not yet in the database (later phases)
 
 - Supabase Storage bucket and policies for InBody files.
-- Server-side functions for user creation, PIN reset, joining a group by code,
-  recommendation review and accept, and nightly locking.
+- Admin-facing Edge Functions for user creation and PIN reset. The same steps exist today
+  in `scripts/lib/provision-user.ts`.
+- Server-side functions for joining a group by code, recommendation review and accept,
+  and nightly locking.
 - The analytics aggregation functions.

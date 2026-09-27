@@ -2794,6 +2794,17 @@ export type Database = {
       }
     }
     Functions: {
+      auth_set_pin: {
+        Args: { p_actor_id?: string; p_pin: string; p_user_id: string }
+        Returns: undefined
+      }
+      auth_verify_pin: {
+        Args: { p_phone: string; p_pin: string }
+        Returns: {
+          status: string
+          user_id: string
+        }[]
+      }
       get_group_member_day: {
         Args: { p_date: string; p_group_id: string }
         Returns: {
@@ -2807,6 +2818,10 @@ export type Database = {
           user_id: string
           workout_logged: boolean
         }[]
+      }
+      save_onboarding_measurements: {
+        Args: { p_height_cm: number; p_weight_kg: number }
+        Returns: undefined
       }
     }
     Enums: {

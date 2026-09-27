@@ -5,8 +5,8 @@ activities, steps and weight, and review monthly recommendation cycles. It's a t
 analysis tool, not an enforcement-based coach. The full product and technical specification is in
 [`spec.md`](./spec.md).
 
-> **Status:** Phase 0 (foundation). Routing, layout shell, design tokens, providers, and the
-> database schema with RLS are in place. Feature pages are placeholders.
+> **Status:** Foundation, database with RLS, and phone + PIN login with first-time onboarding
+> are in place. Feature pages (Home, Food, …) are placeholders.
 
 ## Tech stack
 
@@ -21,11 +21,18 @@ analysis tool, not an enforcement-based coach. The full product and technical sp
 
 Requires Node.js 20.19+ (22 recommended).
 
+Requires Docker for the local Supabase stack.
+
 ```bash
 npm install
-cp .env.example .env   # then fill in your Supabase values
-npm run dev            # http://localhost:5173
+cp supabase/functions/.env.example supabase/functions/.env   # set PIN_AUTH_SECRET (≥ 32 chars)
+npm run supabase:start                                       # DB, Auth, REST, Edge Functions
+cp .env.example .env                                         # URL + anon key from `npx supabase status`
+npm run user:create -- --local --phone 9876543210 --pin 1234 # first account
+npm run dev                                                  # http://localhost:5173
 ```
+
+See [`docs/auth.md`](./docs/auth.md) for how login, sessions and onboarding work.
 
 ### Environment variables
 
@@ -38,25 +45,32 @@ Only `VITE_`-prefixed variables reach the browser bundle. **Never** put the Supa
 service-role key or any AI provider key in a `VITE_` variable. Those belong to Edge
 Functions only. `.env` is git-ignored.
 
-The app shell renders without Supabase configured. The first Supabase call throws a
-descriptive configuration error if the variables are missing.
+If the variables are missing or invalid, the app shows a descriptive configuration error
+at startup.
 
 ## Scripts
 
-| Command                | Purpose                             |
-| ---------------------- | ----------------------------------- |
-| `npm run dev`          | Start the dev server                |
-| `npm run build`        | Type-check and build to `dist/`     |
-| `npm run preview`      | Serve the production build locally  |
-| `npm run typecheck`    | TypeScript project check            |
-| `npm run lint`         | ESLint (type-aware)                 |
-| `npm run format`       | Format with Prettier                |
-| `npm run format:check` | Verify formatting                   |
-| `npm run db:start`     | Start local Postgres (needs Docker) |
-| `npm run db:reset`     | Recreate DB from migrations         |
-| `npm run db:test`      | Run database / RLS tests (pgTAP)    |
-| `npm run db:lint`      | Lint database functions             |
-| `npm run db:types`     | Regenerate `src/types/database.ts`  |
+| Command                    | Purpose                                        |
+| -------------------------- | ---------------------------------------------- |
+| `npm run dev`              | Start the dev server                           |
+| `npm run build`            | Type-check and build to `dist/`                |
+| `npm run preview`          | Serve the production build locally             |
+| `npm run typecheck`        | TypeScript project check                       |
+| `npm run lint`             | ESLint (type-aware)                            |
+| `npm run format`           | Format with Prettier                           |
+| `npm run format:check`     | Verify formatting                              |
+| `npm run test`             | Unit and component tests (Vitest)              |
+| `npm run test:integration` | Auth/RLS tests against the local stack         |
+| `npm run check:bundle`     | Scan `dist/` for server secrets                |
+| `npm run supabase:start`   | Local DB, Auth, REST, Edge Functions           |
+| `npm run functions:serve`  | Edge Functions with hot reload                 |
+| `npm run functions:check`  | `deno check` + `deno lint` for functions       |
+| `npm run user:create`      | Create an account / reset a PIN (service role) |
+| `npm run db:start`         | Start local Postgres only (needs Docker)       |
+| `npm run db:reset`         | Recreate DB from migrations                    |
+| `npm run db:test`          | Run database / RLS tests (pgTAP)               |
+| `npm run db:lint`          | Lint database functions                        |
+| `npm run db:types`         | Regenerate `src/types/database.ts`             |
 
 ## Database
 
@@ -82,8 +96,8 @@ src/
 └── styles/            globals.css (Tailwind + design tokens)
 ```
 
-- **Routes** are grouped by access level (public auth, user app, admin) so session and role
-  guards can be added per group. Security is enforced by Supabase RLS, not by routing.
+- **Routes** are grouped by access level (guest, onboarding, user app, admin) behind guards
+  in `src/app/router/guards.tsx`. Security is enforced by Supabase RLS, not by routing.
 - **Admin screens** are lazy-loaded.
 - **Layout:** below `lg`, a top bar with the profile control plus a fixed bottom nav; at `lg`
   and up, a persistent sidebar and a wider content area.

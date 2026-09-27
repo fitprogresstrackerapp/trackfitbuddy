@@ -1,8 +1,12 @@
 import { NavLink } from 'react-router'
 
 import { APP_NAME } from '@/constants/app'
+import { ICONS } from '@/constants/icons'
 import { PRIMARY_NAV, PROFILE_NAV, type NavItem } from '@/constants/navigation'
 import { ROUTES } from '@/constants/routes'
+import { useAccount } from '@/features/auth/auth-context'
+import { LogoutButton } from '@/features/auth/components/logout-button'
+import { ADMIN_ROLES, hasAnyRole } from '@/features/auth/lib/roles'
 import { cn } from '@/lib/utils'
 
 function SidebarLink({ item }: { item: NavItem }) {
@@ -28,6 +32,9 @@ function SidebarLink({ item }: { item: NavItem }) {
 
 /** Persistent desktop navigation (spec §8). Hidden below `lg`. */
 export function Sidebar() {
+  const { roles } = useAccount()
+  const showAdmin = hasAnyRole(roles, ADMIN_ROLES) // navigation only; access is enforced server-side
+
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-sidebar flex-col border-r border-border bg-surface-1 lg:flex">
       <div className="flex h-top-bar items-center border-b border-border px-4">
@@ -41,7 +48,13 @@ export function Sidebar() {
         </div>
         <div className="my-4 border-t border-border" />
         <SidebarLink item={PROFILE_NAV} />
+        {showAdmin && (
+          <SidebarLink item={{ label: 'Admin', to: ROUTES.admin, icon: ICONS.admin }} />
+        )}
       </nav>
+      <div className="border-t border-border p-3">
+        <LogoutButton variant="ghost" size="sm" className="w-full justify-start" />
+      </div>
     </aside>
   )
 }
