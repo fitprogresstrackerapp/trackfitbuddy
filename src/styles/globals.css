@@ -1,0 +1,154 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens — the single source of colour, type and radius.
+ * Components must use these tokens (via Tailwind classes) instead of raw values.
+ *
+ * Palette (spec §2) → token
+ *   Background      #0A0B0A  → background
+ *   Surface 1       #111311  → surface-1 (also card / popover)
+ *   Surface 2       #171917  → surface-2 (also muted / secondary)
+ *   Border          #2A2D2A  → border / input
+ *   Primary text    #F1EFE7  → foreground
+ *   Secondary text  #A5A49D  → foreground-secondary
+ *   Muted text      #6F716C  → muted-foreground
+ *   Accent          #7C9686  → primary / ring
+ *   Accent surface  #18221C  → primary-surface (also shadcn "accent" hover role)
+ *   Warning         #B59A68  → warning
+ *   Error           #B87570  → destructive
+ *
+ * Names for shadcn roles (primary, accent, muted, …) are kept so that shadcn/ui
+ * primitives added later work without rewriting their classes.
+ */
+@theme {
+  --color-background: #0a0b0a;
+  --color-surface-1: #111311;
+  --color-surface-2: #171917;
+  --color-border: #2a2d2a;
+
+  --color-foreground: #f1efe7;
+  --color-foreground-secondary: #a5a49d;
+  --color-muted-foreground: #6f716c;
+
+  --color-primary: #7c9686;
+  --color-primary-foreground: #0a0b0a;
+  --color-primary-surface: #18221c;
+
+  --color-warning: #b59a68;
+  --color-warning-foreground: #0a0b0a;
+  --color-destructive: #b87570;
+  --color-destructive-foreground: #0a0b0a;
+
+  /* shadcn/ui role aliases — reference the palette above, never new colours. */
+  --color-card: var(--color-surface-1);
+  --color-card-foreground: var(--color-foreground);
+  --color-popover: var(--color-surface-1);
+  --color-popover-foreground: var(--color-foreground);
+  --color-secondary: var(--color-surface-2);
+  --color-secondary-foreground: var(--color-foreground);
+  --color-muted: var(--color-surface-2);
+  --color-accent: var(--color-primary-surface);
+  --color-accent-foreground: var(--color-foreground);
+  --color-input: var(--color-border);
+  --color-ring: var(--color-primary);
+
+  /* Chart series — restrained, token-derived (Recharts reads these via CSS vars). */
+  --color-chart-1: var(--color-primary);
+  --color-chart-2: var(--color-foreground-secondary);
+  --color-chart-3: var(--color-warning);
+  --color-chart-target: var(--color-muted-foreground);
+  --color-chart-grid: var(--color-border);
+
+  /* Typography */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Radius — spec: subtle 4–8px. Larger steps are capped so nothing gets pill-like by accident. */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+
+  /* Layout */
+  --spacing-sidebar: 15rem;
+  --spacing-bottom-nav: 4rem;
+  --spacing-top-bar: 3.5rem;
+
+  /* Motion — restrained */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Monospace metadata label: dates, cycle ids, TARGET, SYNCED. Use sparingly. */
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Section / block heading: small, uppercase, sans. */
+@utility label-section {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Large numerical metric: calories, weight, steps, percentages. */
+@utility metric {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    min-height: 100dvh;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-primary-surface);
+    color: var(--color-foreground);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
