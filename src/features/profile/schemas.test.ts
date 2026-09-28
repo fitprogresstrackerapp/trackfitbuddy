@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import { createBasicsSchema, GENDER_OPTIONS, measurementsSchema } from './schemas'
+import {
+  capacitySchema,
+  createBasicsSchema,
+  createReviewSchema,
+  createStepsEntrySchema,
+  createWeightEntrySchema,
+  GENDER_OPTIONS,
+  goalSchema,
+  heightSchema,
+  lifestyleSchema,
+  measurementsSchema,
+} from './schemas'
 
 const TODAY = '2026-09-28'
 const basics = createBasicsSchema(TODAY)
@@ -77,5 +88,132 @@ describe('measurements (step 2)', () => {
     expect(firstError(measurementsSchema.safeParse({ heightCm: '260', weightKg: '70' }))).toBe(
       'Height must be between 100 and 250 cm',
     )
+  })
+})
+
+describe('profile editing schemas', () => {
+  const TODAY_EDIT = '2026-09-29'
+
+  it('height reuses the onboarding bounds (metric only)', () => {
+    expect(heightSchema.parse({ heightCm: '175' })).toEqual({ heightCm: 175 })
+    expect(heightSchema.safeParse({ heightCm: '99' }).success).toBe(false)
+    expect(heightSchema.safeParse({ heightCm: "5'9" }).success).toBe(false)
+  })
+
+  it('weight entries: range, decimals, date not in the future or older than 90 days', () => {
+    const schema = createWeightEntrySchema(TODAY_EDIT)
+    expect(schema.parse({ weightKg: '72.45', date: TODAY_EDIT })).toEqual({
+      weightKg: 72.45,
+      date: TODAY_EDIT,
+    })
+    expect(schema.safeParse({ weightKg: '0', date: TODAY_EDIT }).success).toBe(false)
+    expect(schema.safeParse({ weightKg: 'NaN', date: TODAY_EDIT }).success).toBe(false)
+    expect(firstError(schema.safeParse({ weightKg: '72', date: '2026-09-30' }))).toBe(
+      'The date can’t be in the future',
+    )
+    expect(firstError(schema.safeParse({ weightKg: '72', date: '2026-06-30' }))).toBe(
+      'Missing entries can be added for the last 90 days',
+    )
+  })
+
+  it('steps: whole, non-negative, within the database maximum, not in the future', () => {
+    const schema = createStepsEntrySchema(TODAY_EDIT)
+    expect(schema.parse({ steps: '8420', date: TODAY_EDIT })).toEqual({
+      steps: 8420,
+      date: TODAY_EDIT,
+    })
+    expect(schema.parse({ steps: '0', date: TODAY_EDIT }).steps).toBe(0)
+    expect(firstError(schema.safeParse({ steps: '-5', date: TODAY_EDIT }))).toBe(
+      'Use a whole number of steps',
+    )
+    expect(firstError(schema.safeParse({ steps: '84.5', date: TODAY_EDIT }))).toBe(
+      'Use a whole number of steps',
+    )
+    expect(firstError(schema.safeParse({ steps: '200001', date: TODAY_EDIT }))).toBe(
+      'Steps must be at most 2,00,000',
+    )
+    expect(firstError(schema.safeParse({ steps: '100', date: '2026-10-01' }))).toBe(
+      'The date can’t be in the future',
+    )
+  })
+
+  it('lifestyle fields are optional; blanks are stored as not set', () => {
+    expect(lifestyleSchema.parse({ activityLevel: '', job: '  ', hobbies: '' })).toEqual({
+      activityLevel: null,
+      job: null,
+      hobbies: null,
+    })
+    expect(
+      lifestyleSchema.parse({ activityLevel: 'VERY_ACTIVE', job: 'Engineer', hobbies: 'Cricket' })
+        .activityLevel,
+    ).toBe('VERY_ACTIVE')
+    expect(
+      lifestyleSchema.safeParse({ activityLevel: 'ATHLETE', job: '', hobbies: '' }).success,
+    ).toBe(false)
+    expect(
+      lifestyleSchema.safeParse({ activityLevel: '', job: 'x'.repeat(201), hobbies: '' }).success,
+    ).toBe(false)
+  })
+
+  it('goals: valid long-term goal, several distinct focuses, bounded objective', () => {
+    expect(
+      goalSchema.parse({
+        longTermGoal: 'FAT_LOSS',
+        focuses: ['ENDURANCE', 'FLEXIBILITY'],
+        objective: '  Keep it simple ',
+      }),
+    ).toEqual({
+      longTermGoal: 'FAT_LOSS',
+      focuses: ['ENDURANCE', 'FLEXIBILITY'],
+      objective: 'Keep it simple',
+    })
+    expect(
+      goalSchema.parse({ longTermGoal: 'PERFORMANCE', focuses: [], objective: '' }).objective,
+    ).toBeNull()
+    expect(goalSchema.safeParse({ longTermGoal: '', focuses: [], objective: '' }).success).toBe(
+      false,
+    )
+    expect(
+      goalSchema.safeParse({ longTermGoal: 'FAT_LOSS', focuses: ['YOGA'], objective: '' }).success,
+    ).toBe(false)
+    expect(
+      goalSchema.safeParse({
+        longTermGoal: 'FAT_LOSS',
+        focuses: ['ENDURANCE', 'ENDURANCE'],
+        objective: '',
+      }).success,
+    ).toBe(false)
+    expect(
+      goalSchema.safeParse({ longTermGoal: 'FAT_LOSS', focuses: [], objective: 'x'.repeat(2001) })
+        .success,
+    ).toBe(false)
+  })
+
+  it('capacity is 2–6 days per week', () => {
+    expect(capacitySchema.safeParse({ workoutDaysPerWeek: 5 }).success).toBe(true)
+    expect(capacitySchema.safeParse({ workoutDaysPerWeek: 1 }).success).toBe(false)
+    expect(capacitySchema.safeParse({ workoutDaysPerWeek: 7 }).success).toBe(false)
+  })
+
+  it('recommendation review: target ranges and a fixed session count', () => {
+    const schema = createReviewSchema(3)
+    const valid = {
+      calories: '1900',
+      proteinG: '150',
+      carbsG: '220.5',
+      fatG: '60',
+      fiberG: '32',
+      sessions: ['Push', 'Pull', 'Legs'],
+    }
+    expect(schema.parse(valid)).toMatchObject({
+      calories: 1900,
+      carbsG: 220.5,
+      sessions: ['Push', 'Pull', 'Legs'],
+    })
+    expect(schema.safeParse({ ...valid, calories: '500' }).success).toBe(false)
+    expect(schema.safeParse({ ...valid, calories: '1900.5' }).success).toBe(false)
+    expect(schema.safeParse({ ...valid, proteinG: 'Infinity' }).success).toBe(false)
+    expect(schema.safeParse({ ...valid, sessions: ['Push', 'Pull'] }).success).toBe(false)
+    expect(schema.safeParse({ ...valid, sessions: ['Push', ' ', 'Legs'] }).success).toBe(false)
   })
 })

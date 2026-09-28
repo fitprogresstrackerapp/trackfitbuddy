@@ -5,20 +5,21 @@ The PostgreSQL / Supabase data model, and the security model built on it. The SQ
 
 ## Migrations
 
-| File                                    | Contents                                                                                                                         |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `…0100_extensions_and_types.sql`        | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                                                |
-| `…0200_profiles_roles_settings.sql`     | profiles, user_roles, manager assignments, system_settings, access helper functions                                              |
-| `…0300_goals_and_recommendations.sql`   | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                                        |
-| `…0400_food_and_meals.sql`              | food submissions, food items and versions, merges, meals, meal items (snapshots)                                                 |
-| `…0500_training_and_body.sql`           | workouts, activities, steps, InBody reports/metrics, weight history                                                              |
-| `…0600_groups.sql`                      | groups, memberships, group helpers, `get_group_member_day()`                                                                     |
-| `…0700_audit_and_record_integrity.sql`  | audit log, record guard (locking and soft delete), audit triggers                                                                |
-| `…0800_rls_policies_and_views.sql`      | grants, RLS policies, read views                                                                                                 |
-| `20260928000100_pin_authentication.sql` | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                     |
-| `20261001000100_food_logging.sql`       | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                  |
-| `20261002000100_training_logging.sql`   | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training |
-| `20261003000100_progress_analytics.sql` | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                            |
+| File                                     | Contents                                                                                                                                                  |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `…0100_extensions_and_types.sql`         | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                                                                         |
+| `…0200_profiles_roles_settings.sql`      | profiles, user_roles, manager assignments, system_settings, access helper functions                                                                       |
+| `…0300_goals_and_recommendations.sql`    | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                                                                 |
+| `…0400_food_and_meals.sql`               | food submissions, food items and versions, merges, meals, meal items (snapshots)                                                                          |
+| `…0500_training_and_body.sql`            | workouts, activities, steps, InBody reports/metrics, weight history                                                                                       |
+| `…0600_groups.sql`                       | groups, memberships, group helpers, `get_group_member_day()`                                                                                              |
+| `…0700_audit_and_record_integrity.sql`   | audit log, record guard (locking and soft delete), audit triggers                                                                                         |
+| `…0800_rls_policies_and_views.sql`       | grants, RLS policies, read views                                                                                                                          |
+| `20260928000100_pin_authentication.sql`  | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                                              |
+| `20261001000100_food_logging.sql`        | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                                           |
+| `20261002000100_training_logging.sql`    | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training                          |
+| `20261003000100_progress_analytics.sql`  | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                                                     |
+| `20261004000100_profile_body_review.sql` | `log_weight`, `log_steps` (late entry), `set_goal` (goal versions), `review_recommendation` / `accept_recommendation`, InBody storage bucket and policies |
 
 ### Workflow
 
@@ -175,7 +176,8 @@ The rule (spec §66) is enforced by `private.guard_user_record()` on meals, meal
 workouts, activities, steps and weight. For a normal user, evaluated in their timezone:
 
 - records can only be created for today, except a new meal, workout or activity for a missing
-  past day (up to 90 days back) created through `log_meal` / `log_workout` / `log_activity` —
+  past day (up to 90 days back) created through `log_meal` / `log_workout` / `log_activity`,
+  or a missing weight / step entry through `log_weight` / `log_steps` —
   see [`food.md`](./food.md#late-entry-missing-historical-food);
 - a record is editable only while its date is today and it isn't explicitly locked;
 - the record date can't be moved, and lock flags can't be touched;
@@ -255,9 +257,8 @@ Added in the authentication phase. See [`docs/auth.md`](./auth.md).
 
 ## Not yet in the database (later phases)
 
-- Supabase Storage bucket and policies for InBody files.
 - Admin-facing Edge Functions for user creation and PIN reset. The same steps exist today
   in `scripts/lib/provision-user.ts`.
-- Server-side functions for joining a group by code, recommendation review and accept,
-  and nightly locking.
-- The analytics aggregation functions.
+- Server-side functions for joining a group by code, and nightly locking.
+  (Recommendation review/accept and `daily_nutrition` now exist; see the migrations above.)
+- Further analytics aggregation functions (monthly averages, weight change) for AI input.

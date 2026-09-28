@@ -2794,6 +2794,7 @@ export type Database = {
       }
     }
     Functions: {
+      accept_recommendation: { Args: { p_cycle_id: string }; Returns: undefined }
       add_meal_items: { Args: { p_items: Json; p_meal_id: string }; Returns: number }
       auth_set_pin: {
         Args: { p_actor_id?: string; p_pin: string; p_user_id: string }
@@ -2872,6 +2873,8 @@ export type Database = {
         }
         Returns: string
       }
+      log_steps: { Args: { p_date: string; p_steps: number }; Returns: string }
+      log_weight: { Args: { p_date: string; p_weight_kg: number }; Returns: string }
       log_workout: {
         Args: {
           p_date: string
@@ -2881,6 +2884,18 @@ export type Database = {
           p_type: string
         }
         Returns: string
+      }
+      review_recommendation: {
+        Args: {
+          p_calories: number
+          p_carbs_g: number
+          p_cycle_id: string
+          p_fat_g: number
+          p_fiber_g: number
+          p_protein_g: number
+          p_sessions?: string[]
+        }
+        Returns: undefined
       }
       save_onboarding_measurements: {
         Args: { p_height_cm: number; p_weight_kg: number }
@@ -2906,6 +2921,10 @@ export type Database = {
           source: string
           use_count: number
         }[]
+      }
+      set_goal: {
+        Args: { p_description?: string; p_focuses: string[]; p_long_term_goal: string }
+        Returns: string
       }
       training_calorie_rates: { Args: Record<PropertyKey, never>; Returns: Json }
     }

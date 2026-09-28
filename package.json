@@ -20,7 +20,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "supabase:start": "supabase start -x realtime,storage-api,imgproxy,studio,mailpit,logflare,vector,supavisor",
+    "supabase:start": "supabase start -x realtime,imgproxy,studio,mailpit,logflare,vector,supavisor",
     "functions:serve": "supabase functions serve --env-file supabase/functions/.env",
     "functions:check": "cd supabase/functions && deno check --config pin-login/deno.json pin-login/index.ts && deno lint --config pin-login/deno.json pin-login _shared",
     "check:bundle": "node scripts/check-bundle.ts",

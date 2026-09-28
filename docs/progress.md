@@ -104,8 +104,8 @@ target is never applied to the past.
   per week when at least 2 weeks have data.
 - **Steps:** the active daily value from `daily_steps`, the latest valid entry per day.
   The average is taken over days with an entry only, since no entry is not 0 steps. There
-  is no step goal. Steps entry itself is a later feature, so steps appear only when the
-  records exist.
+  is no step goal. Steps are entered on Profile (see [`profile.md`](./profile.md)); Progress
+  refreshes after each change.
 
 ## Body
 

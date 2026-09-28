@@ -1,7 +1,9 @@
 import { vi } from 'vitest'
 
+import type * as ProfileData from '@/features/profile/api/profile-data'
+
 /**
- * Stubs Home, Food, Training and Progress data access so route/auth tests that land on those
+ * Stubs Home, Food, Training, Progress and Profile data access so route/auth tests that land on those
  * pages never hit the network. Import this module at the top of such tests.
  */
 vi.mock('@/features/home/api/home-data', () => ({
@@ -64,3 +66,28 @@ vi.mock('@/features/progress/api/progress-data', () => ({
   fetchBodyPeriod: vi.fn(() => Promise.resolve({ weights: [], composition: [] })),
   fetchStepsPeriod: vi.fn(() => Promise.resolve([])),
 }))
+
+vi.mock('@/features/profile/api/profile-data', async (importOriginal) => {
+  const actual = await importOriginal<typeof ProfileData>()
+  return {
+    ...actual,
+    fetchProfileDetails: vi.fn(() =>
+      Promise.resolve({
+        name: 'Asha',
+        dateOfBirth: '1994-05-17',
+        gender: 'FEMALE',
+        heightCm: 165,
+        activityLevel: null,
+        job: null,
+        hobbies: null,
+        workoutDaysPerWeek: 4,
+        phone: '+919876543210',
+        timezone: 'Asia/Kolkata',
+      }),
+    ),
+    fetchWeights: vi.fn(() => Promise.resolve({ current: null, recent: [] })),
+    fetchRecentSteps: vi.fn(() => Promise.resolve([])),
+    fetchInbodyReports: vi.fn(() => Promise.resolve([])),
+    fetchPlan: vi.fn(() => Promise.resolve({ activeGoal: null, recommendation: null })),
+  }
+})

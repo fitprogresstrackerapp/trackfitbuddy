@@ -1,8 +1,10 @@
 import { z } from 'zod'
 
 import type { Gender } from '@/features/auth/types'
-import { ageOn, isValidIsoDate } from '@/lib/dates/local-date'
+import { addDays, ageOn, isValidIsoDate } from '@/lib/dates/local-date'
 import { Constants } from '@/types/database'
+
+import { FOCUS_TYPES, LONG_TERM_GOALS } from './lib/goals'
 
 export const GENDER_OPTIONS = [
   { value: 'MALE', label: 'Male' },
@@ -70,3 +72,140 @@ export const measurementsSchema = z.object({
 })
 
 export type MeasurementsInput = z.output<typeof measurementsSchema>
+
+/*
+ * Profile editing (after onboarding) reuses the onboarding rules above for
+ * personal details and height, and adds the schemas below. The database
+ * constraints stay authoritative.
+ */
+
+/** Height alone, with the onboarding bounds. */
+export const heightSchema = z.object({
+  heightCm: measurementField('height', 'cm', HEIGHT_RANGE_CM, 1),
+})
+
+/** How far back a missing measurement can be added (mirrors log_weight / log_steps). */
+export const ENTRY_WINDOW_DAYS = 90
+
+function entryDate(today: string) {
+  const earliest = addDays(today, -ENTRY_WINDOW_DAYS)
+  return z
+    .string()
+    .refine(isValidIsoDate, { error: 'Enter a valid date' })
+    .refine((value) => value <= today, { error: 'The date can’t be in the future' })
+    .refine((value) => value >= earliest, {
+      error: `Missing entries can be added for the last ${String(ENTRY_WINDOW_DAYS)} days`,
+    })
+}
+
+/** A manual weight measurement. */
+export function createWeightEntrySchema(today: string) {
+  return z.object({
+    weightKg: measurementField('weight', 'kg', WEIGHT_RANGE_KG, 2),
+    date: entryDate(today),
+  })
+}
+
+export type WeightEntryInput = z.output<ReturnType<typeof createWeightEntrySchema>>
+
+/** Database maximum for one day's steps. */
+export const STEPS_MAX = 200_000
+
+/** A manual step entry: a whole, non-negative number for one day. */
+export function createStepsEntrySchema(today: string) {
+  return z.object({
+    steps: z
+      .string()
+      .trim()
+      .min(1, { error: 'Enter your steps' })
+      .regex(/^\d+$/, { error: 'Use a whole number of steps' })
+      .transform(Number)
+      .refine((value) => value <= STEPS_MAX, {
+        error: `Steps must be at most ${STEPS_MAX.toLocaleString('en-IN')}`,
+      }),
+    date: entryDate(today),
+  })
+}
+
+export type StepsEntryInput = z.output<ReturnType<typeof createStepsEntrySchema>>
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, { error: `Use at most ${String(max)} characters` })
+    .transform((value) => (value.length > 0 ? value : null))
+
+/** Lifestyle context: activity level (optional), job, hobbies/sports. */
+export const lifestyleSchema = z.object({
+  activityLevel: z
+    .union([z.enum(Constants.public.Enums.activity_level), z.literal('')])
+    .transform((value) => (value === '' ? null : value)),
+  job: optionalText(200),
+  hobbies: optionalText(500),
+})
+
+export type LifestyleInput = z.output<typeof lifestyleSchema>
+
+export const OBJECTIVE_MAX = 2000
+
+/** Goals (spec §22): one long-term goal, several short-term focuses, free text. */
+export const goalSchema = z.object({
+  longTermGoal: z.enum(LONG_TERM_GOALS, { error: 'Choose a long-term goal' }),
+  focuses: z
+    .array(z.enum(FOCUS_TYPES))
+    .max(FOCUS_TYPES.length)
+    .refine((values) => new Set(values).size === values.length, {
+      error: 'Choose each focus at most once',
+    }),
+  objective: optionalText(OBJECTIVE_MAX),
+})
+
+export type GoalInput = z.output<typeof goalSchema>
+
+/** Workout capacity preference (spec §16): 2–6 days per week. */
+export const capacitySchema = z.object({
+  workoutDaysPerWeek: z
+    .number({ error: 'Choose 2–6 days per week' })
+    .int()
+    .min(2, { error: 'Choose 2–6 days per week' })
+    .max(6, { error: 'Choose 2–6 days per week' }),
+})
+
+const target = (label: string, min: number, max: number, decimals: number) =>
+  z
+    .string()
+    .trim()
+    .min(1, { error: `Enter ${label.toLowerCase()}` })
+    .regex(decimals === 0 ? /^\d+$/ : /^\d+(\.\d)?$/, {
+      error: decimals === 0 ? 'Use a whole number' : 'Use a number with up to 1 decimal',
+    })
+    .transform(Number)
+    .refine((value) => value >= min && value <= max, {
+      error: `${label} must be between ${String(min)} and ${String(max)}`,
+    })
+
+/**
+ * Recommendation review (spec §33): final targets and the names of the
+ * template's sessions. The session count is fixed by the cycle's capacity.
+ */
+export function createReviewSchema(sessionCount: number) {
+  return z.object({
+    calories: target('Calories', 800, 6000, 0),
+    proteinG: target('Protein', 0, 500, 1),
+    carbsG: target('Carbs', 0, 1000, 1),
+    fatG: target('Fat', 0, 400, 1),
+    fiberG: target('Fiber', 0, 150, 1),
+    sessions: z
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1, { error: 'Name each session' })
+          .max(60, { error: 'Use at most 60 characters' }),
+      )
+      .length(sessionCount, { error: `The template has ${String(sessionCount)} sessions` }),
+  })
+}
+
+export type ReviewInput = z.output<ReturnType<typeof createReviewSchema>>

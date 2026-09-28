@@ -125,7 +125,7 @@ height and a current weight. Optional profile fields never block entry.
 ## Local development
 
 ```bash
-npm run supabase:start   # DB, Auth, REST, gateway, Edge runtime (serves pin-login)
+npm run supabase:start   # DB, Auth, REST, Storage, gateway, Edge runtime (serves pin-login)
 npm run functions:serve  # optional: hot reload while editing functions
 npm run dev
 ```

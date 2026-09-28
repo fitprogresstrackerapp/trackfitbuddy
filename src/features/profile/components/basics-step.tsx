@@ -21,9 +21,16 @@ interface BasicsStepProps {
   initial: { name: string | null; dateOfBirth: string | null; gender: Gender | null }
   today: string
   onSubmit: (input: BasicsInput) => Promise<void>
+  /** Onboarding continues to the next step; Profile saves. */
+  submitLabel?: string
 }
 
-export function BasicsStep({ initial, today, onSubmit }: BasicsStepProps) {
+export function BasicsStep({
+  initial,
+  today,
+  onSubmit,
+  submitLabel = 'Continue',
+}: BasicsStepProps) {
   const [name, setName] = useState(initial.name ?? '')
   const [dateOfBirth, setDateOfBirth] = useState(initial.dateOfBirth ?? '')
   const [gender, setGender] = useState<string>(initial.gender ?? '')
@@ -137,7 +144,7 @@ export function BasicsStep({ initial, today, onSubmit }: BasicsStepProps) {
       {saveError && <InlineAlert>{saveError}</InlineAlert>}
 
       <Button type="submit" size="lg" className="w-full" disabled={saving}>
-        {saving ? 'Saving…' : 'Continue'}
+        {saving ? 'Saving…' : submitLabel}
       </Button>
     </form>
   )

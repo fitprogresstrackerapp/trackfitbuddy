@@ -7,7 +7,8 @@ analysis tool, not an enforcement-based coach. The full product and technical sp
 
 > **Status:** Foundation, database with RLS, phone + PIN login with onboarding, the design
 > system and shell, the Home dashboard, Food & Nutrition tracking, Workout & Activity
-> tracking and Progress are in place. Groups, Profile and Admin are placeholders.
+> tracking, Progress, and Profile (goals, steps, body, recommendation review) are in place.
+> Groups and Admin are placeholders.
 
 ## Tech stack
 
@@ -27,7 +28,7 @@ Requires Docker for the local Supabase stack.
 ```bash
 npm install
 cp supabase/functions/.env.example supabase/functions/.env   # set PIN_AUTH_SECRET (≥ 32 chars)
-npm run supabase:start                                       # DB, Auth, REST, Edge Functions
+npm run supabase:start                                       # DB, Auth, REST, Storage, Edge Functions
 cp .env.example .env                                         # URL + anon key from `npx supabase status`
 npm run user:create -- --local --phone 9876543210 --pin 1234 # first account
 npm run dev                                                  # http://localhost:5173
@@ -63,7 +64,7 @@ at startup.
 | `npm run test`             | Unit and component tests (Vitest)              |
 | `npm run test:integration` | Auth/RLS tests against the local stack         |
 | `npm run check:bundle`     | Scan `dist/` for server secrets                |
-| `npm run supabase:start`   | Local DB, Auth, REST, Edge Functions           |
+| `npm run supabase:start`   | Local DB, Auth, REST, Storage, Edge Functions  |
 | `npm run functions:serve`  | Edge Functions with hot reload                 |
 | `npm run functions:check`  | `deno check` + `deno lint` for functions       |
 | `npm run user:create`      | Create an account / reset a PIN (service role) |
@@ -94,6 +95,11 @@ Capacity, weekly adherence, guidance, calorie estimates and activities:
 ## Progress
 
 Ranges, historical targets, adherence and body trends: [`docs/progress.md`](./docs/progress.md).
+
+## Profile
+
+Profile fields, goals and cycle boundaries, steps, weight, InBody and recommendation review:
+[`docs/profile.md`](./docs/profile.md).
 
 ## Database
 
