@@ -1,6 +1,7 @@
 import type { AppSupabaseClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/database'
 
+import { resolveTargets } from '../lib/targets'
 import type { DailyTargets } from '../types'
 
 type CycleRow = Pick<
@@ -57,44 +58,8 @@ export async function fetchTargetsForDate(
   if (snapshotResult.error) throw snapshotResult.error
   if (cycleResult.error) throw cycleResult.error
 
-  const snapshot = snapshotResult.data
-  const cycle = cycleResult.data
-
-  if (snapshot) {
-    return {
-      cycle,
-      targets: {
-        calories: snapshot.calories,
-        proteinG: snapshot.protein_g,
-        carbsG: snapshot.carbs_g,
-        fatG: snapshot.fat_g,
-        fiberG: snapshot.fiber_g,
-        workoutsPerWeek: snapshot.workouts_per_week,
-        tolerance: {
-          nutrient: snapshot.nutrition_tolerance,
-          calorieLower: snapshot.calorie_lower_tolerance,
-          calorieUpper: snapshot.calorie_upper_tolerance,
-        },
-        source: 'snapshot',
-      },
-    }
+  return {
+    cycle: cycleResult.data,
+    targets: resolveTargets(snapshotResult.data, cycleResult.data),
   }
-
-  if (cycle) {
-    return {
-      cycle,
-      targets: {
-        calories: cycle.final_calories,
-        proteinG: cycle.final_protein_g,
-        carbsG: cycle.final_carbs_g,
-        fatG: cycle.final_fat_g,
-        fiberG: cycle.final_fiber_g,
-        workoutsPerWeek: cycle.workout_days_per_week,
-        tolerance: null,
-        source: 'cycle',
-      },
-    }
-  }
-
-  return { targets: null, cycle: null }
 }

@@ -10,7 +10,7 @@ import { focusLabel, longTermGoalLabel } from '@/features/profile/lib/goals'
 
 import { nextAction, nextSession, type NextActionTarget } from '../lib/home-logic'
 import type { HomeNutrition, HomePlan, HomeTraining } from '../types'
-import { SectionError } from './section-error'
+import { SectionError } from '@/components/common/section-error'
 
 const ACTION_LABELS: Record<NextActionTarget, string> = {
   food: 'Add food',

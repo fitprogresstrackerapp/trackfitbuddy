@@ -1,8 +1,15 @@
 import '@/test/mock-home-data'
 import { cleanup, fireEvent, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeAccount, renderApp, signedIn, signedOut } from '@/test/auth-harness'
+
+// The lazily loaded Progress route pulls in the charting library; its first
+// import in jsdom is slow. Load it once up front so route tests measure
+// routing, not module transformation.
+beforeAll(async () => {
+  await import('@/features/progress/pages/progress-page')
+}, 60_000)
 
 beforeEach(() => {
   // The onboarding page creates the Supabase client (no requests are made).

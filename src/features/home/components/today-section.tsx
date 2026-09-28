@@ -13,7 +13,7 @@ import { formatNumber } from '@/lib/format'
 
 import { isTransitionWeek } from '../lib/home-logic'
 import type { HomePlan, HomeTraining, TrainingEntry } from '../types'
-import { SectionError } from './section-error'
+import { SectionError } from '@/components/common/section-error'
 
 function TodayCell({
   icon: Icon,

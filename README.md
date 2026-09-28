@@ -6,8 +6,8 @@ analysis tool, not an enforcement-based coach. The full product and technical sp
 [`spec.md`](./spec.md).
 
 > **Status:** Foundation, database with RLS, phone + PIN login with onboarding, the design
-> system and shell, the Home dashboard, Food & Nutrition tracking and Workout & Activity
-> tracking are in place. Progress, Groups, Profile and Admin are placeholders.
+> system and shell, the Home dashboard, Food & Nutrition tracking, Workout & Activity
+> tracking and Progress are in place. Groups, Profile and Admin are placeholders.
 
 ## Tech stack
 
@@ -90,6 +90,10 @@ Logging, search, snapshots, locking, late entry and copy: [`docs/food.md`](./doc
 
 Capacity, weekly adherence, guidance, calorie estimates and activities:
 [`docs/workout.md`](./docs/workout.md).
+
+## Progress
+
+Ranges, historical targets, adherence and body trends: [`docs/progress.md`](./docs/progress.md).
 
 ## Database
 

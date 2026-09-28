@@ -7,7 +7,7 @@ import {
 } from '@/features/nutrition/components/nutrition-summary'
 
 import type { HomeNutrition, HomePlan } from '../types'
-import { SectionError } from './section-error'
+import { SectionError } from '@/components/common/section-error'
 
 interface NutritionSectionProps {
   plan: UseQueryResult<HomePlan>

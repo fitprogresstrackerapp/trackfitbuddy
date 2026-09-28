@@ -8,6 +8,7 @@ import {
 import { useEffect, useState } from 'react'
 
 import { homeKeys } from '@/features/home/api/home-queries'
+import { progressKeys } from '@/features/progress/api/progress-queries'
 import { fetchTargetsForDate } from '@/features/nutrition/api/targets'
 import { getSupabaseClient } from '@/lib/supabase/client'
 
@@ -135,7 +136,7 @@ export function useMySubmissions(userId: string) {
 
 /**
  * After any meal change: the changed day, food usage (recent/frequent and
- * search ranking), copy candidates, and Home. Targets are unaffected.
+ * search ranking), copy candidates, Home and Progress. Targets are unaffected.
  * Nothing is updated optimistically — values come back from the database.
  */
 async function invalidateAfterMealChange(queryClient: QueryClient, userId: string) {
@@ -145,6 +146,7 @@ async function invalidateAfterMealChange(queryClient: QueryClient, userId: strin
     queryClient.invalidateQueries({ queryKey: foodKeys.searches(userId) }),
     queryClient.invalidateQueries({ queryKey: foodKeys.copyCandidates(userId) }),
     queryClient.invalidateQueries({ queryKey: homeKeys.all(userId) }),
+    queryClient.invalidateQueries({ queryKey: progressKeys.all(userId) }),
   ])
 }
 

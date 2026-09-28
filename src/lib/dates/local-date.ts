@@ -43,6 +43,30 @@ export function addDays(iso: string, days: number): string {
 }
 
 /**
+ * Calendar-month arithmetic on ISO dates. The day is clamped to the target
+ * month's length: addMonths('2026-05-31', -3) → '2026-02-28'.
+ */
+export function addMonths(iso: string, months: number): string {
+  const [y = 1970, m = 1, d = 1] = iso.split('-').map(Number)
+  const first = new Date(Date.UTC(y, m - 1 + months, 1))
+  const lastDay = new Date(
+    Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0),
+  ).getUTCDate()
+  first.setUTCDate(Math.min(d, lastDay))
+  return toIso(first)
+}
+
+/** Whole days from `from` to `to` (positive when `to` is later). */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((toUtcDate(to).getTime() - toUtcDate(from).getTime()) / 86_400_000)
+}
+
+/** Full month name, e.g. "September" (cycle labels). */
+export function formatMonthName(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'long' }).format(toUtcDate(iso))
+}
+
+/**
  * The Monday–Sunday calendar week containing `iso` (spec §17: weeks are
  * strictly Monday → Sunday, never rolling 7-day windows).
  */

@@ -65,7 +65,10 @@ describe('Home data', () => {
     const client = await signedInClient(owner.phone, owner.pin)
     const training = await fetchHomeTraining(client, owner.userId, TODAY)
     expect(training.steps).toBe(7842)
-    expect(training.workoutsToday.map((workout) => workout.type)).toEqual(['CHEST_TRICEPS'])
+    // The fixture's "earlier this week" workout is on Monday, which is today on Mondays.
+    expect(training.workoutsToday.map((workout) => workout.type)).toEqual(
+      TODAY === WEEK.start ? ['CHEST_TRICEPS', 'BACK'] : ['CHEST_TRICEPS'],
+    )
     expect(training.workoutDaysThisWeek).toBe(new Set([TODAY, WEEK.start]).size)
     expect(training.week).toEqual(WEEK)
     expect(training.activitiesToday.map((activity) => activity.type)).toEqual(['CRICKET'])

@@ -1,7 +1,7 @@
 import { ErrorState } from '@/components/common/error-state'
 import { Button } from '@/components/ui/button'
 
-/** Compact, retryable failure for one Home section — never replaced by fake zeros. */
+/** Compact, retryable failure for one page section — never replaced by fake zeros. */
 export function SectionError({ title, onRetry }: { title: string; onRetry: () => void }) {
   return (
     <ErrorState

@@ -18,6 +18,7 @@ The PostgreSQL / Supabase data model, and the security model built on it. The SQ
 | `20260928000100_pin_authentication.sql` | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                     |
 | `20261001000100_food_logging.sql`       | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                  |
 | `20261002000100_training_logging.sql`   | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training |
+| `20261003000100_progress_analytics.sql` | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                            |
 
 ### Workflow
 

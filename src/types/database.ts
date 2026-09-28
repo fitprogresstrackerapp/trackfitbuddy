@@ -2807,6 +2807,18 @@ export type Database = {
         }[]
       }
       copy_meal: { Args: { p_source_meal_id: string; p_target_date: string }; Returns: string }
+      daily_nutrition: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          calories: number
+          carbs_g: number
+          fat_g: number
+          fiber_g: number
+          item_count: number
+          nutrition_date: string
+          protein_g: number
+        }[]
+      }
       food_usage: {
         Args: { p_limit?: number; p_order?: string }
         Returns: {

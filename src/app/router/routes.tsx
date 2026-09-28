@@ -10,7 +10,6 @@ import { GroupsPage } from '@/features/groups/pages/groups-page'
 import { HomePage } from '@/features/home/pages/home-page'
 import { OnboardingPage } from '@/features/profile/pages/onboarding-page'
 import { ProfilePage } from '@/features/profile/pages/profile-page'
-import { ProgressPage } from '@/features/progress/pages/progress-page'
 import { WorkoutPage } from '@/features/workout/pages/workout-page'
 
 import { AdminLayout } from '../layouts/admin-layout'
@@ -37,6 +36,12 @@ import { RouteErrorPage } from './route-error-page'
  *
  * Guards only decide what to render. Data access is enforced by Supabase RLS.
  */
+
+/** Progress carries the charting library, so it is loaded on demand. */
+async function loadProgressPage() {
+  const { ProgressPage } = await import('@/features/progress/pages/progress-page')
+  return { Component: ProgressPage }
+}
 
 /** Admin screens are lazy-loaded (spec §83). */
 async function loadAdminSection() {
@@ -93,7 +98,7 @@ export const appRoutes: RouteObject[] = [
                   { path: ROUTES.home, Component: HomePage },
                   { path: ROUTES.food, Component: FoodPage },
                   { path: ROUTES.workout, Component: WorkoutPage },
-                  { path: ROUTES.progress, Component: ProgressPage },
+                  { path: ROUTES.progress, lazy: loadProgressPage },
                   { path: ROUTES.groups, Component: GroupsPage },
                   { path: ROUTES.profile, Component: ProfilePage },
                 ],

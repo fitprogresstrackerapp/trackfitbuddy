@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { homeKeys } from '@/features/home/api/home-queries'
+import { progressKeys } from '@/features/progress/api/progress-queries'
 import { getSupabaseClient } from '@/lib/supabase/client'
 
 import type { TrainingInput } from '../schemas'
@@ -62,7 +63,7 @@ export function useCalorieRates(enabled: boolean) {
 }
 
 /**
- * Mutations refetch the training weeks and Home (targets are unaffected).
+ * Mutations refetch the training weeks, Home and Progress (targets are unaffected).
  * Nothing is optimistic: stored calories come back from the database.
  */
 export function useTrainingMutations(userId: string) {
@@ -72,6 +73,7 @@ export function useTrainingMutations(userId: string) {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: trainingKeys.weeks(userId) }),
       queryClient.invalidateQueries({ queryKey: homeKeys.all(userId) }),
+      queryClient.invalidateQueries({ queryKey: progressKeys.all(userId) }),
     ])
 
   const create = useMutation({

@@ -23,7 +23,13 @@ export default defineConfig({
               priority: 30,
             },
             { name: 'vendor-supabase', test: /node_modules[\\/]@supabase[\\/]/, priority: 20 },
-            { name: 'vendor', test: /node_modules[\\/]/, priority: 10 },
+            // Everything else shared — except the charting stack, which only the
+            // lazily loaded Progress page uses and so stays in its lazy chunk.
+            {
+              name: 'vendor',
+              test: /node_modules[\\/](?!(recharts|d3-[^\\/]+|victory-vendor|decimal\.js-light|internmap|es-toolkit|immer|reselect|@reduxjs|redux|react-redux|redux-thunk|eventemitter3)[\\/])/,
+              priority: 10,
+            },
           ],
         },
       },
