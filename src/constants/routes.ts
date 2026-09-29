@@ -13,7 +13,8 @@ export const ROUTES = {
   adminManagers: '/admin/managers',
   adminGroups: '/admin/groups',
   adminFoods: '/admin/foods',
-  adminProcessing: '/admin/processing',
+  /** Monthly AI recommendation processing (Prompt 10). */
+  adminProcessing: '/admin/recommendations',
   adminAiUsage: '/admin/ai-usage',
   adminAudit: '/admin/audit',
   adminSettings: '/admin/settings',

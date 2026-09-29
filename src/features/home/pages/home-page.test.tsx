@@ -237,7 +237,7 @@ describe('recommendation states', () => {
     await renderHome()
     expect(await screen.findByText('No active recommendation')).toBeTruthy()
     expect(screen.getByText('Daily targets are not available yet.')).toBeTruthy()
-    expect(screen.getByText('No active plan')).toBeTruthy()
+    expect(screen.getByText('No recommendation available')).toBeTruthy()
     expect(screen.queryByText(/\/ 2,000/)).toBeNull()
     expect(screen.getByText('days this week')).toBeTruthy() // count without "/ n"
     expect(screen.getByText('Focus areas are set with your first recommendation.')).toBeTruthy()

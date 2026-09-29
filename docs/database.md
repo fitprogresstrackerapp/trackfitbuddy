@@ -5,21 +5,22 @@ The PostgreSQL / Supabase data model, and the security model built on it. The SQ
 
 ## Migrations
 
-| File                                     | Contents                                                                                                                                                  |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `…0100_extensions_and_types.sql`         | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                                                                         |
-| `…0200_profiles_roles_settings.sql`      | profiles, user_roles, manager assignments, system_settings, access helper functions                                                                       |
-| `…0300_goals_and_recommendations.sql`    | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                                                                 |
-| `…0400_food_and_meals.sql`               | food submissions, food items and versions, merges, meals, meal items (snapshots)                                                                          |
-| `…0500_training_and_body.sql`            | workouts, activities, steps, InBody reports/metrics, weight history                                                                                       |
-| `…0600_groups.sql`                       | groups, memberships, group helpers, `get_group_member_day()`                                                                                              |
-| `…0700_audit_and_record_integrity.sql`   | audit log, record guard (locking and soft delete), audit triggers                                                                                         |
-| `…0800_rls_policies_and_views.sql`       | grants, RLS policies, read views                                                                                                                          |
-| `20260928000100_pin_authentication.sql`  | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                                              |
-| `20261001000100_food_logging.sql`        | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                                           |
-| `20261002000100_training_logging.sql`    | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training                          |
-| `20261003000100_progress_analytics.sql`  | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                                                     |
-| `20261004000100_profile_body_review.sql` | `log_weight`, `log_steps` (late entry), `set_goal` (goal versions), `review_recommendation` / `accept_recommendation`, InBody storage bucket and policies |
+| File                                       | Contents                                                                                                                                                                |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `…0100_extensions_and_types.sql`           | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                                                                                       |
+| `…0200_profiles_roles_settings.sql`        | profiles, user_roles, manager assignments, system_settings, access helper functions                                                                                     |
+| `…0300_goals_and_recommendations.sql`      | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                                                                               |
+| `…0400_food_and_meals.sql`                 | food submissions, food items and versions, merges, meals, meal items (snapshots)                                                                                        |
+| `…0500_training_and_body.sql`              | workouts, activities, steps, InBody reports/metrics, weight history                                                                                                     |
+| `…0600_groups.sql`                         | groups, memberships, group helpers, `get_group_member_day()`                                                                                                            |
+| `…0700_audit_and_record_integrity.sql`     | audit log, record guard (locking and soft delete), audit triggers                                                                                                       |
+| `…0800_rls_policies_and_views.sql`         | grants, RLS policies, read views                                                                                                                                        |
+| `20260928000100_pin_authentication.sql`    | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                                                            |
+| `20261001000100_food_logging.sql`          | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                                                         |
+| `20261002000100_training_logging.sql`      | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training                                        |
+| `20261003000100_progress_analytics.sql`    | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                                                                   |
+| `20261004000100_profile_body_review.sql`   | `log_weight`, `log_steps` (late entry), `set_goal` (goal versions), `review_recommendation` / `accept_recommendation`, InBody storage bucket and policies               |
+| `20261005000100_recommendation_engine.sql` | AI recommendation engine: attempt/run extensions, one-open-attempt index, AI settings, processing functions (service role), admin overview/usage, feedback window guard |
 
 ### Workflow
 
@@ -138,9 +139,16 @@ the real actor. A JWT user can't override `app.actor_id`.
 `daily_target_snapshots` holds the calorie, macro and workout target, plus the tolerances,
 that applied on each date. It's unique on `(user_id, target_date)` and linked to the cycle
 that produced it. Adherence for a date must use that date's snapshot, never today's
-target, so changing a setting or a cycle never rewrites past results. The server writes
-snapshots when a cycle is generated or its targets change. Creating them is part of the
-recommendation phase.
+target, so changing a setting or a cycle never rewrites past results.
+
+- `complete_recommendation_attempt()` writes them when a cycle is generated: 62 days
+  from the new start date, with the targets, capacity and the tolerances in force at
+  generation. The next cycle overwrites its own dates (upsert on `(user_id, target_date)`).
+- Dates before the new cycle's start are never touched.
+- `review_recommendation()` updates the cycle's snapshots from today onward.
+- A day beyond the written range falls back to the covering cycle's final targets (no
+  tolerance, so not counted for adherence). This only happens if a cycle is not
+  followed by a new one within 62 days.
 
 ### Meal nutrition snapshots
 
@@ -167,8 +175,12 @@ Each `meal_items` row stores the nutrition values that applied when it was logge
 - The goal (`goal_id`) and capacity (`workout_days_per_week`) are locked per cycle:
   - A goal used by a cycle can't be edited, and its focuses can't change.
   - Changing goals means creating a new goal version, which applies to the next cycle.
-- Reprocessing marks the old cycle `REPLACED`. Every processing attempt keeps its own row
-  with tokens, cost, model and prompt version.
+- Reprocessing marks the old cycle `REPLACED` (kept, never deleted). If it started
+  before the reprocess date, its `period_end` becomes the day before, and its earlier
+  snapshots stay as they were. Every processing attempt keeps its own row with tokens,
+  cost, model, prompt version and pricing version.
+- A new cycle closes the previous one (`period_end` = the day before). If the previous
+  one was still marked `IN_REVIEW`, it is locked by the system (`locked_by` null).
 
 ### Locking
 
@@ -243,6 +255,43 @@ For updates, only the changed columns are stored. Callers can attach a reason wi
 - **`ai_monthly_budget`** defaults to null (not configured), so processing can't start
   until an admin sets a budget.
 
+## Recommendation processing
+
+Added by `20261005000100_recommendation_engine.sql` (see
+[`docs/recommendations.md`](./recommendations.md)).
+
+- **New columns:**
+  - `recommendation_processing_runs.mode`: PROCESS / RETRY / REPROCESS.
+  - `recommendation_processing_users`: `processing_month` (the user's local month),
+    `reserved_cost` (only while PROCESSING), `pricing_version`, and the `goal_id` and
+    `workout_days_per_week` the input was built from.
+  - `ai_usage_records.pricing_version`.
+- **Constraint:** `processing_users_one_open_per_user` allows one PENDING/PROCESSING
+  attempt per user.
+- **Service-role only** (EXECUTE revoked from `anon` and `authenticated`, admins included):
+  - `enqueue_recommendation_run`
+  - `claim_recommendation_attempt` (global budget advisory lock)
+  - `complete_recommendation_attempt`, `fail_recommendation_attempt`,
+    `skip_recommendation_attempt`
+  - `refresh_recommendation_run`, `recover_stale_recommendation_attempts`
+  - `recommendation_daily_nutrition` (the same aggregation as `daily_nutrition`, for
+    any user)
+- **Admin-only readers** (the function raises for anyone else):
+  - `recommendation_overview()`: per-user readiness and monthly state, no body metrics.
+  - `ai_usage_summary(month)`: budget, spend, reservations, requests and tokens.
+- **Feedback:**
+  - `private.feedback_window_open` is also closed while the user has a PROCESSING
+    attempt.
+  - The `recommendation_feedback_guard` trigger re-checks the window under the same
+    advisory lock as the claim, so the text the AI receives is exactly the text that
+    gets locked.
+- **Settings:** `validate_system_setting` also validates `ai_enabled`,
+  `ai_prompt_version`, `ai_max_output_tokens`, `ai_request_timeout_seconds`,
+  `ai_max_retries`, `ai_stale_processing_minutes` and `ai_pricing`. The defaults set
+  `ai_provider` = `anthropic` and `ai_model` = `claude-opus-5` where they were unset.
+  `ai_monthly_budget` stays null, so processing can't start until a budget is set. A
+  missing row means the same as null.
+
 ## Authentication tables and functions
 
 Added in the authentication phase. See [`docs/auth.md`](./auth.md).
@@ -261,4 +310,4 @@ Added in the authentication phase. See [`docs/auth.md`](./auth.md).
   in `scripts/lib/provision-user.ts`.
 - Server-side functions for joining a group by code, and nightly locking.
   (Recommendation review/accept and `daily_nutrition` now exist; see the migrations above.)
-- Further analytics aggregation functions (monthly averages, weight change) for AI input.
+- Automatic (cron) recommendation processing: processing is admin-triggered for now.

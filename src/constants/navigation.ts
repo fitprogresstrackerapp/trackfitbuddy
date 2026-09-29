@@ -96,10 +96,10 @@ export const ADMIN_NAV: readonly NavItem[] = [
     description: 'Shared foods, submissions, duplicates and merges.',
   },
   {
-    label: 'Monthly Processing',
+    label: 'Recommendations',
     to: ROUTES.adminProcessing,
     icon: ClipboardList,
-    description: 'Recommendation processing runs and per-user status.',
+    description: 'Monthly AI recommendation processing, readiness, AI usage and history.',
   },
   {
     label: 'AI Usage',

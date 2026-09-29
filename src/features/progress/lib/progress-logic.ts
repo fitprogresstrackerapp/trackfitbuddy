@@ -1,8 +1,8 @@
-import { evaluateCalories, evaluateNutrient } from '@/features/nutrition/lib/nutrition'
-import { resolveTargets } from '@/features/nutrition/lib/targets'
-import type { DailyTargets } from '@/features/nutrition/types'
-import { countWorkoutDays, isTransitionWeek } from '@/features/training/lib/training'
-import { addDays, addMonths, calendarWeekOf } from '@/lib/dates/local-date'
+import { evaluateCalories, evaluateNutrient } from '../../nutrition/lib/nutrition.ts'
+import { resolveTargets } from '../../nutrition/lib/targets.ts'
+import type { DailyTargets } from '../../nutrition/types.ts'
+import { countWorkoutDays, isTransitionWeek } from '../../training/lib/training.ts'
+import { addDays, addMonths, calendarWeekOf } from '../../../lib/dates/local-date.ts'
 
 import type {
   BodyPeriodData,
@@ -15,7 +15,7 @@ import type {
   StepsDay,
   TrainingEntry,
   WeightMeasurement,
-} from '../types'
+} from '../types.ts'
 
 /*
  * Deterministic Progress calculations (spec §26–28, §44). Pure functions over

@@ -183,6 +183,7 @@ export function useProfileMutations(userId: string) {
       progressKeys.all(userId),
       trainingKeys.all(userId),
       ['food', userId, 'targets'],
+      ['recommendations', userId],
     )
   const review = useMutation({
     mutationFn: (input: { cycleId: string; values: ReviewInput }) =>

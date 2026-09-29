@@ -1,4 +1,4 @@
-import type { DailyTargets } from '../types'
+import type { DailyTargets } from '../types.ts'
 
 /*
  * Target selection (spec §26), shared by Home, Food and Progress: a date uses

@@ -4,6 +4,12 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AuthContext, type AuthContextValue } from '@/features/auth/auth-context'
+import {
+  fetchMonthlyFeedback,
+  fetchRecommendationHistory,
+  saveMonthlyFeedback,
+} from '@/features/recommendations/api/recommendation-data'
+import type * as RecommendationData from '@/features/recommendations/api/recommendation-data'
 import { makeAccount, renderApp, signedIn } from '@/test/auth-harness'
 
 import {
@@ -48,6 +54,15 @@ vi.mock('../api/profile-data', async (importOriginal) => {
     saveGoal: vi.fn(),
     reviewRecommendation: vi.fn(),
     acceptRecommendation: vi.fn(),
+  }
+})
+vi.mock('@/features/recommendations/api/recommendation-data', async (importOriginal) => {
+  const actual = await importOriginal<typeof RecommendationData>()
+  return {
+    ...actual,
+    fetchMonthlyFeedback: vi.fn(),
+    fetchRecommendationHistory: vi.fn(),
+    saveMonthlyFeedback: vi.fn(),
   }
 })
 vi.mock('@/features/home/api/home-data', () => ({
@@ -102,6 +117,14 @@ const PLAN: PlanData = {
   recommendation: RECOMMENDATION,
 }
 
+const OPEN_FEEDBACK = {
+  month: '2026-09-01',
+  feedback: null,
+  updatedAt: null,
+  locked: false,
+  processed: false,
+}
+
 class ResizeObserverStub {
   observe = vi.fn()
   unobserve = vi.fn()
@@ -148,6 +171,24 @@ beforeEach(() => {
   vi.mocked(fetchRecentSteps).mockResolvedValue([])
   vi.mocked(fetchInbodyReports).mockResolvedValue([])
   vi.mocked(fetchPlan).mockResolvedValue(PLAN)
+  vi.mocked(fetchMonthlyFeedback).mockResolvedValue(OPEN_FEEDBACK)
+  vi.mocked(fetchRecommendationHistory).mockResolvedValue([
+    {
+      id: 'c2',
+      periodStart: TODAY,
+      periodEnd: null,
+      reviewDeadline: '2026-09-30',
+      status: 'IN_REVIEW',
+    },
+    {
+      id: 'c1',
+      periodStart: '2026-08-04',
+      periodEnd: '2026-09-28',
+      reviewDeadline: '2026-08-05',
+      status: 'LOCKED',
+    },
+  ])
+  vi.mocked(saveMonthlyFeedback).mockResolvedValue()
   for (const fn of [
     updatePersonal,
     updateLifestyle,
@@ -379,7 +420,7 @@ describe('Current plan', () => {
   it('no recommendation is never invented', async () => {
     vi.mocked(fetchPlan).mockResolvedValue({ activeGoal: null, recommendation: null })
     await openProfile()
-    expect(section('Current plan').textContent).toContain('No recommendation')
+    expect(section('Current plan').textContent).toContain('No current recommendation')
     expect(within(section('Current plan')).queryByRole('button', { name: /review/i })).toBeNull()
   })
 
@@ -424,5 +465,81 @@ describe('Current plan', () => {
     expect(plan.textContent).toContain('1,900 kcalEdited2,000')
     expect(within(plan).queryByRole('button', { name: /review targets/i })).toBeNull()
     expect(within(plan).queryByRole('button', { name: /accept/i })).toBeNull()
+  })
+
+  describe('monthly check-in and history', () => {
+    it('saves this month’s optional check-in', async () => {
+      await openProfile()
+      const checkIn = section('Monthly check-in')
+      expect(checkIn.textContent).toContain('Open')
+      fireEvent.change(within(checkIn).getByLabelText('How did this cycle feel?'), {
+        target: { value: '  The split felt hard; prefer more variety.  ' },
+      })
+      fireEvent.click(within(checkIn).getByRole('button', { name: 'Save feedback' }))
+      await waitFor(() => {
+        expect(saveMonthlyFeedback).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(String),
+          '2026-09-01',
+          'The split felt hard; prefer more variety.',
+        )
+      })
+    })
+
+    it('an empty check-in is not saved', async () => {
+      await openProfile()
+      const checkIn = section('Monthly check-in')
+      fireEvent.click(within(checkIn).getByRole('button', { name: 'Save feedback' }))
+      expect(await within(checkIn).findByText(/write a few words/i)).toBeTruthy()
+      expect(saveMonthlyFeedback).not.toHaveBeenCalled()
+    })
+
+    it('shows a friendly message when the server has closed the window', async () => {
+      vi.mocked(saveMonthlyFeedback).mockRejectedValue({
+        code: '42501',
+        message: 'The feedback window for this month has closed',
+      })
+      await openProfile()
+      const checkIn = section('Monthly check-in')
+      fireEvent.change(within(checkIn).getByLabelText('How did this cycle feel?'), {
+        target: { value: 'Late note' },
+      })
+      fireEvent.click(within(checkIn).getByRole('button', { name: 'Save feedback' }))
+      expect(await within(checkIn).findByText('This month’s check-in is closed.')).toBeTruthy()
+    })
+
+    it('after processing, the check-in used is read-only', async () => {
+      vi.mocked(fetchMonthlyFeedback).mockResolvedValue({
+        ...OPEN_FEEDBACK,
+        feedback: 'Prefer shorter sessions.',
+        locked: true,
+        processed: true,
+      })
+      await openProfile()
+      const checkIn = section('Monthly check-in')
+      expect(checkIn.textContent).toContain(
+        'Your September check-in was used for your recommendation.',
+      )
+      expect(checkIn.textContent).toContain('Prefer shorter sessions.')
+      expect(within(checkIn).queryByRole('textbox')).toBeNull()
+    })
+
+    it('once this month is processed without a check-in, it says when the next opens', async () => {
+      vi.mocked(fetchMonthlyFeedback).mockResolvedValue({ ...OPEN_FEEDBACK, processed: true })
+      await openProfile()
+      expect(section('Monthly check-in').textContent).toContain('next check-in opens on OCT 1')
+    })
+
+    it('lists the recommendation history with simple states', async () => {
+      await openProfile()
+      const history = section('Recommendation history')
+      const items = within(history).getAllByRole('listitem')
+      expect(items.map((item) => item.textContent)).toEqual([
+        expect.stringContaining('In review'),
+        expect.stringContaining('Previous'),
+      ])
+      expect(items[0]?.textContent).toContain('SEP 29')
+      expect(items[1]?.textContent).toContain('AUG 4')
+    })
   })
 })

@@ -23,7 +23,7 @@ function PlanBadge({ plan, today }: { plan: UseQueryResult<HomePlan>; today: str
     return <StatusBadge status="pending" label={`Review until ${formatShortDate(state.until)}`} />
   }
   if (state.kind === 'active') return <StatusBadge status="active" label="Plan active" />
-  return <StatusBadge status="pending" label="No active plan" />
+  return <StatusBadge status="pending" label="No recommendation available" />
 }
 
 /** "SUN 27 SEP · GOOD MORNING" over the user's first name (spec §9 top section). */

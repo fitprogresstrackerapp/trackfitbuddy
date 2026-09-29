@@ -49,6 +49,12 @@ async function loadAdminSection() {
   return { Component: AdminSectionPage }
 }
 
+async function loadRecommendationsAdmin() {
+  const { AdminRecommendationsPage } =
+    await import('@/features/recommendations/pages/admin-recommendations-page')
+  return { Component: AdminRecommendationsPage }
+}
+
 /**
  * Development-only routes. `import.meta.env.DEV` is statically false in
  * production builds, so these routes and their chunks are not shipped.
@@ -112,7 +118,13 @@ export const appRoutes: RouteObject[] = [
                     children: ADMIN_NAV.map((item) =>
                       item.to === ROUTES.admin
                         ? { index: true, lazy: loadAdminSection }
-                        : { path: item.to.slice(ROUTES.admin.length + 1), lazy: loadAdminSection },
+                        : {
+                            path: item.to.slice(ROUTES.admin.length + 1),
+                            lazy:
+                              item.to === ROUTES.adminProcessing
+                                ? loadRecommendationsAdmin
+                                : loadAdminSection,
+                          },
                     ),
                   },
                 ],

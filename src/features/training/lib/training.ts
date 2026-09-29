@@ -6,7 +6,7 @@ import type {
   TrainingKind,
   TrainingPlan,
   TrainingRecord,
-} from '../types'
+} from '../types.ts'
 
 /*
  * Training rules shared by Home and Workout (spec §14–18). Pure functions;

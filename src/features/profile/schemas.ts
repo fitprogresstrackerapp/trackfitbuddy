@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import type { Gender } from '@/features/auth/types'
+import { TARGET_RANGES } from '@/features/recommendations/engine/config'
 import { addDays, ageOn, isValidIsoDate } from '@/lib/dates/local-date'
 import { Constants } from '@/types/database'
 
@@ -187,15 +188,16 @@ const target = (label: string, min: number, max: number, decimals: number) =>
 
 /**
  * Recommendation review (spec §33): final targets and the names of the
- * template's sessions. The session count is fixed by the cycle's capacity.
+ * template's sessions. The session count is fixed by the cycle's capacity. The ranges
+ * are shared with AI output validation (TARGET_RANGES).
  */
 export function createReviewSchema(sessionCount: number) {
   return z.object({
-    calories: target('Calories', 800, 6000, 0),
-    proteinG: target('Protein', 0, 500, 1),
-    carbsG: target('Carbs', 0, 1000, 1),
-    fatG: target('Fat', 0, 400, 1),
-    fiberG: target('Fiber', 0, 150, 1),
+    calories: target('Calories', TARGET_RANGES.calories.min, TARGET_RANGES.calories.max, 0),
+    proteinG: target('Protein', TARGET_RANGES.protein_g.min, TARGET_RANGES.protein_g.max, 1),
+    carbsG: target('Carbs', TARGET_RANGES.carbs_g.min, TARGET_RANGES.carbs_g.max, 1),
+    fatG: target('Fat', TARGET_RANGES.fat_g.min, TARGET_RANGES.fat_g.max, 1),
+    fiberG: target('Fiber', TARGET_RANGES.fiber_g.min, TARGET_RANGES.fiber_g.max, 1),
     sessions: z
       .array(
         z

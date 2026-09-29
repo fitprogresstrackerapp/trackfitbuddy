@@ -1,9 +1,10 @@
 import { vi } from 'vitest'
 
 import type * as ProfileData from '@/features/profile/api/profile-data'
+import type * as RecommendationData from '@/features/recommendations/api/recommendation-data'
 
 /**
- * Stubs Home, Food, Training, Progress and Profile data access so route/auth tests that land on those
+ * Stubs Home, Food, Training, Progress, Profile and recommendation data access so route/auth tests that land on those
  * pages never hit the network. Import this module at the top of such tests.
  */
 vi.mock('@/features/home/api/home-data', () => ({
@@ -89,5 +90,23 @@ vi.mock('@/features/profile/api/profile-data', async (importOriginal) => {
     fetchRecentSteps: vi.fn(() => Promise.resolve([])),
     fetchInbodyReports: vi.fn(() => Promise.resolve([])),
     fetchPlan: vi.fn(() => Promise.resolve({ activeGoal: null, recommendation: null })),
+  }
+})
+
+vi.mock('@/features/recommendations/api/recommendation-data', async (importOriginal) => {
+  const actual = await importOriginal<typeof RecommendationData>()
+  return {
+    ...actual,
+    fetchMonthlyFeedback: vi.fn(() =>
+      Promise.resolve({
+        month: '2026-09-01',
+        feedback: null,
+        updatedAt: null,
+        locked: false,
+        processed: false,
+      }),
+    ),
+    fetchRecommendationHistory: vi.fn(() => Promise.resolve([])),
+    saveMonthlyFeedback: vi.fn(),
   }
 })

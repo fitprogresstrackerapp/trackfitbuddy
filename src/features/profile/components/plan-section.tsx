@@ -70,8 +70,8 @@ export function PlanSection({ plan, today, mutations }: PlanSectionProps) {
       ) : !recommendation ? (
         <EmptyState
           icon={ICONS.goals}
-          title="No recommendation"
-          description="Your targets and workout template appear after your first monthly recommendation."
+          title="No current recommendation"
+          description="A recommendation has not been generated yet. Your targets and workout template appear here once it is."
         />
       ) : (
         <PlanDetails recommendation={recommendation} />

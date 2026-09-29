@@ -1,4 +1,4 @@
-import type { NutritionTotals, Tolerance } from '../types'
+import type { NutritionTotals, Tolerance } from '../types.ts'
 
 /*
  * Nutrition rules shared by Home and Food. Pure functions over rows the

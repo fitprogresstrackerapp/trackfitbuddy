@@ -1,6 +1,7 @@
 /**
  * Fails if the production bundle (dist/) contains server-only secrets:
- * service-role JWTs, secret API keys, or the names/values of server secrets.
+ * service-role JWTs, secret API keys (Supabase and AI providers), or the names/values of
+ * server secrets.
  * Run after `npm run build`.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
@@ -10,10 +11,20 @@ import { readLocalServerEnv } from './lib/local-env.ts'
 
 const DIST = 'dist'
 const JWT = /eyJ[A-Za-z0-9_-]+\.(eyJ[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g
-const FORBIDDEN_MARKERS = ['SERVICE_ROLE', 'service_role_key', 'PIN_AUTH_SECRET']
+const FORBIDDEN_MARKERS = [
+  'SERVICE_ROLE',
+  'service_role_key',
+  'PIN_AUTH_SECRET',
+  // AI provider secrets and server-only provider code (Prompt 10).
+  'ANTHROPIC_API_KEY',
+  'OPENAI_API_KEY',
+  'x-api-key',
+]
 // A real secret API key. (supabase-js itself contains the bare `sb_secret_` prefix
 // in a key-type check, which is not a secret.)
 const SECRET_API_KEY = /sb_secret_[A-Za-z0-9_-]{16,}/
+// Anthropic / OpenAI-style secret keys.
+const AI_API_KEY = /sk-(ant-)?[A-Za-z0-9_-]{32,}/
 
 function listFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -40,6 +51,10 @@ const secretValues: string[] = []
 try {
   const env = readLocalServerEnv()
   secretValues.push(env.serviceRoleKey, env.pinAuthSecret)
+  const aiKey = /^ANTHROPIC_API_KEY=(.+)$/m.exec(
+    readFileSync('supabase/functions/.env', 'utf8'),
+  )?.[1]
+  if (aiKey) secretValues.push(aiKey.trim())
 } catch {
   // Local stack not running: marker and JWT checks still apply.
 }
@@ -53,6 +68,7 @@ for (const file of files) {
     if (text.includes(marker)) findings.push(`${file}: contains "${marker}"`)
   }
   if (SECRET_API_KEY.test(text)) findings.push(`${file}: contains a secret API key`)
+  if (AI_API_KEY.test(text)) findings.push(`${file}: contains an AI provider API key`)
   for (const value of secretValues) {
     if (value && text.includes(value)) findings.push(`${file}: contains a server secret value`)
   }

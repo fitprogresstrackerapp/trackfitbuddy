@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAccount } from '@/features/auth/auth-context'
 import { LogoutButton } from '@/features/auth/components/logout-button'
+import { CheckInSection } from '@/features/recommendations/components/check-in-section'
+import { RecommendationHistory } from '@/features/recommendations/components/recommendation-history'
 import { safeTimeZone, todayInTimeZone } from '@/lib/dates/local-date'
 
 import {
@@ -27,7 +29,7 @@ import { StepsSection } from '../components/steps-section'
 import { missingFieldLabels } from '../lib/profile-logic'
 
 /**
- * Profile (spec §20–23, §29–33): who the user is, what they want, what they
+ * Profile (spec §20–23, §29–33; monthly check-in §31): who the user is, what they want, what they
  * measure, and the current plan — kept as separate kinds of data. Each section
  * edits its own data; onboarding stays first-time setup only.
  */
@@ -104,6 +106,10 @@ export function ProfilePage() {
             <InbodySection reports={inbody} today={today} mutations={mutations} />
           </div>
           <PlanSection plan={plan} today={today} mutations={mutations} />
+          <div className="grid gap-10 lg:grid-cols-2 [&>*]:min-w-0">
+            <CheckInSection userId={profile.id} today={today} />
+            <RecommendationHistory userId={profile.id} today={today} />
+          </div>
           <Section title="Account">
             <DetailList>
               <Detail label="Phone">{details.data.phone}</Detail>

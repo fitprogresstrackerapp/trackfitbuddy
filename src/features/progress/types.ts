@@ -1,5 +1,5 @@
-import type { TargetCycleRow, TargetSnapshotRow } from '@/features/nutrition/lib/targets'
-import type { Database } from '@/types/database'
+import type { TargetCycleRow, TargetSnapshotRow } from '../nutrition/lib/targets.ts'
+import type { Database } from '../../types/database.ts'
 
 export type RangeKey = '7D' | '30D' | '3M' | '6M' | '1Y'
 

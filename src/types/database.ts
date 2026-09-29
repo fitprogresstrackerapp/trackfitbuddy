@@ -121,6 +121,7 @@ export type Database = {
           input_tokens: number
           model: string
           output_tokens: number
+          pricing_version: string | null
           processing_run_id: string
           processing_user_id: string | null
           prompt_version: string | null
@@ -139,6 +140,7 @@ export type Database = {
           input_tokens?: number
           model: string
           output_tokens?: number
+          pricing_version?: string | null
           processing_run_id: string
           processing_user_id?: string | null
           prompt_version?: string | null
@@ -157,6 +159,7 @@ export type Database = {
           input_tokens?: number
           model?: string
           output_tokens?: number
+          pricing_version?: string | null
           processing_run_id?: string
           processing_user_id?: string | null
           prompt_version?: string | null
@@ -1651,6 +1654,7 @@ export type Database = {
           currency: string
           failure_reason: string | null
           id: string
+          mode: string
           model: string | null
           processing_month: string
           prompt_version: string | null
@@ -1668,6 +1672,7 @@ export type Database = {
           currency?: string
           failure_reason?: string | null
           id?: string
+          mode?: string
           model?: string | null
           processing_month: string
           prompt_version?: string | null
@@ -1685,6 +1690,7 @@ export type Database = {
           currency?: string
           failure_reason?: string | null
           id?: string
+          mode?: string
           model?: string | null
           processing_month?: string
           prompt_version?: string | null
@@ -1720,12 +1726,15 @@ export type Database = {
           estimated_cost: number | null
           failure_reason: string | null
           generated_at: string | null
+          goal_id: string | null
           id: string
           input_schema_version: string | null
           input_tokens: number | null
           model: string | null
           output_tokens: number | null
           parsed_recommendation_json: Json | null
+          pricing_version: string | null
+          processing_month: string | null
           processing_run_id: string
           prompt_version: string | null
           provider: string | null
@@ -1736,12 +1745,14 @@ export type Database = {
           recommended_fat_g: number | null
           recommended_fiber_g: number | null
           recommended_protein_g: number | null
+          reserved_cost: number | null
           skip_reason: string | null
           started_at: string | null
           status: Database['public']['Enums']['processing_user_status']
           total_tokens: number | null
           updated_at: string
           user_id: string
+          workout_days_per_week: number | null
         }
         Insert: {
           actual_cost?: number | null
@@ -1752,12 +1763,15 @@ export type Database = {
           estimated_cost?: number | null
           failure_reason?: string | null
           generated_at?: string | null
+          goal_id?: string | null
           id?: string
           input_schema_version?: string | null
           input_tokens?: number | null
           model?: string | null
           output_tokens?: number | null
           parsed_recommendation_json?: Json | null
+          pricing_version?: string | null
+          processing_month?: string | null
           processing_run_id: string
           prompt_version?: string | null
           provider?: string | null
@@ -1768,12 +1782,14 @@ export type Database = {
           recommended_fat_g?: number | null
           recommended_fiber_g?: number | null
           recommended_protein_g?: number | null
+          reserved_cost?: number | null
           skip_reason?: string | null
           started_at?: string | null
           status?: Database['public']['Enums']['processing_user_status']
           total_tokens?: never
           updated_at?: string
           user_id: string
+          workout_days_per_week?: number | null
         }
         Update: {
           actual_cost?: number | null
@@ -1784,12 +1800,15 @@ export type Database = {
           estimated_cost?: number | null
           failure_reason?: string | null
           generated_at?: string | null
+          goal_id?: string | null
           id?: string
           input_schema_version?: string | null
           input_tokens?: number | null
           model?: string | null
           output_tokens?: number | null
           parsed_recommendation_json?: Json | null
+          pricing_version?: string | null
+          processing_month?: string | null
           processing_run_id?: string
           prompt_version?: string | null
           provider?: string | null
@@ -1800,14 +1819,23 @@ export type Database = {
           recommended_fat_g?: number | null
           recommended_fiber_g?: number | null
           recommended_protein_g?: number | null
+          reserved_cost?: number | null
           skip_reason?: string | null
           started_at?: string | null
           status?: Database['public']['Enums']['processing_user_status']
           total_tokens?: never
           updated_at?: string
           user_id?: string
+          workout_days_per_week?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'processing_users_goal_fk'
+            columns: ['goal_id', 'user_id']
+            isOneToOne: false
+            referencedRelation: 'goals'
+            referencedColumns: ['id', 'user_id']
+          },
           {
             foreignKeyName: 'recommendation_processing_users_processing_run_id_fkey'
             columns: ['processing_run_id']
@@ -2796,6 +2824,24 @@ export type Database = {
     Functions: {
       accept_recommendation: { Args: { p_cycle_id: string }; Returns: undefined }
       add_meal_items: { Args: { p_items: Json; p_meal_id: string }; Returns: number }
+      ai_usage_summary: {
+        Args: { p_month: string }
+        Returns: {
+          actual_spend: number
+          budget: number
+          currency: string
+          estimated_spend: number
+          input_tokens: number
+          models: string[]
+          output_tokens: number
+          processing_month: string
+          remaining: number
+          requests: number
+          reserved: number
+          total_tokens: number
+          users_processed: number
+        }[]
+      }
       auth_set_pin: {
         Args: { p_actor_id?: string; p_pin: string; p_user_id: string }
         Returns: undefined
@@ -2806,6 +2852,25 @@ export type Database = {
           status: string
           user_id: string
         }[]
+      }
+      claim_recommendation_attempt: {
+        Args: {
+          p_attempt_id: string
+          p_capacity: number
+          p_estimated_cost: number
+          p_goal_id: string
+          p_input: Json
+          p_input_schema_version: string
+          p_model: string
+          p_pricing_version: string
+          p_prompt_version: string
+          p_provider: string
+        }
+        Returns: Json
+      }
+      complete_recommendation_attempt: {
+        Args: { p_attempt_id: string; p_parsed: Json; p_raw_output: Json; p_usage: Json }
+        Returns: string
       }
       copy_meal: { Args: { p_source_meal_id: string; p_target_date: string }; Returns: string }
       daily_nutrition: {
@@ -2819,6 +2884,25 @@ export type Database = {
           nutrition_date: string
           protein_g: number
         }[]
+      }
+      enqueue_recommendation_run: {
+        Args: {
+          p_all_ready: boolean
+          p_batch_size: number
+          p_budget_limit: number
+          p_created_by: string
+          p_currency: string
+          p_mode: string
+          p_model: string
+          p_prompt_version: string
+          p_provider: string
+          p_user_ids: string[]
+        }
+        Returns: Json
+      }
+      fail_recommendation_attempt: {
+        Args: { p_attempt_id: string; p_failure_reason: string; p_raw_output: Json; p_usage: Json }
+        Returns: undefined
       }
       food_usage: {
         Args: { p_limit?: number; p_order?: string }
@@ -2885,6 +2969,42 @@ export type Database = {
         }
         Returns: string
       }
+      recommendation_daily_nutrition: {
+        Args: { p_end: string; p_start: string; p_user_id: string }
+        Returns: {
+          calories: number
+          carbs_g: number
+          fat_g: number
+          fiber_g: number
+          item_count: number
+          nutrition_date: string
+          protein_g: number
+        }[]
+      }
+      recommendation_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          has_goal: boolean
+          last_cycle_start: string
+          latest_attempt_at: string
+          latest_attempt_status: Database['public']['Enums']['processing_user_status']
+          latest_failure_reason: string
+          latest_skip_reason: string
+          local_date: string
+          missing_fields: string[]
+          month_cycle_status: Database['public']['Enums']['recommendation_cycle_status']
+          name: string
+          processing_month: string
+          state: string
+          user_id: string
+          workout_days_per_week: number
+        }[]
+      }
+      recover_stale_recommendation_attempts: { Args: { p_stale_minutes: number }; Returns: number }
+      refresh_recommendation_run: {
+        Args: { p_run_id: string; p_stopped_by_budget?: boolean }
+        Returns: Database['public']['Enums']['processing_run_status']
+      }
       review_recommendation: {
         Args: {
           p_calories: number
@@ -2925,6 +3045,10 @@ export type Database = {
       set_goal: {
         Args: { p_description?: string; p_focuses: string[]; p_long_term_goal: string }
         Returns: string
+      }
+      skip_recommendation_attempt: {
+        Args: { p_attempt_id: string; p_reason: string }
+        Returns: undefined
       }
       training_calorie_rates: { Args: Record<PropertyKey, never>; Returns: Json }
     }
