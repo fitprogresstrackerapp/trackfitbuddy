@@ -53,27 +53,30 @@ at startup.
 
 ## Scripts
 
-| Command                    | Purpose                                        |
-| -------------------------- | ---------------------------------------------- |
-| `npm run dev`              | Start the dev server                           |
-| `npm run build`            | Type-check and build to `dist/`                |
-| `npm run preview`          | Serve the production build locally             |
-| `npm run typecheck`        | TypeScript project check                       |
-| `npm run lint`             | ESLint (type-aware)                            |
-| `npm run format`           | Format with Prettier                           |
-| `npm run format:check`     | Verify formatting                              |
-| `npm run test`             | Unit and component tests (Vitest)              |
-| `npm run test:integration` | Auth/RLS tests against the local stack         |
-| `npm run check:bundle`     | Scan `dist/` for server secrets                |
-| `npm run supabase:start`   | Local DB, Auth, REST, Storage, Edge Functions  |
-| `npm run functions:serve`  | Edge Functions with hot reload                 |
-| `npm run functions:check`  | `deno check` + `deno lint` for functions       |
-| `npm run user:create`      | Create an account / reset a PIN (service role) |
-| `npm run db:start`         | Start local Postgres only (needs Docker)       |
-| `npm run db:reset`         | Recreate DB from migrations                    |
-| `npm run db:test`          | Run database / RLS tests (pgTAP)               |
-| `npm run db:lint`          | Lint database functions                        |
-| `npm run db:types`         | Regenerate `src/types/database.ts`             |
+| Command                    | Purpose                                         |
+| -------------------------- | ----------------------------------------------- |
+| `npm run dev`              | Start the dev server                            |
+| `npm run build`            | Type-check and build to `dist/`                 |
+| `npm run preview`          | Serve the production build locally              |
+| `npm run preview:prod`     | Serve `dist/` with the vercel.json rules        |
+| `npm run typecheck`        | TypeScript project check                        |
+| `npm run lint`             | ESLint (type-aware)                             |
+| `npm run format`           | Format with Prettier                            |
+| `npm run format:check`     | Verify formatting                               |
+| `npm run test`             | Unit and component tests (Vitest)               |
+| `npm run test:integration` | Auth/RLS tests against the local stack          |
+| `npm run check:bundle`     | Scan `dist/` for server secrets                 |
+| `npm run smoke:deployment` | Read-only smoke test of a deployment            |
+| `npm run supabase:start`   | Local DB, Auth, REST, Storage, Edge Functions   |
+| `npm run functions:serve`  | Edge Functions with hot reload                  |
+| `npm run functions:check`  | `deno check` + `deno lint` for functions        |
+| `npm run functions:bundle` | Bundle each function for deploy, run standalone |
+| `npm run user:create`      | Create an account / reset a PIN (service role)  |
+| `npm run db:start`         | Start local Postgres only (needs Docker)        |
+| `npm run db:reset`         | Recreate DB from migrations                     |
+| `npm run db:test`          | Run database / RLS tests (pgTAP)                |
+| `npm run db:lint`          | Lint database functions                         |
+| `npm run db:types`         | Regenerate `src/types/database.ts`              |
 
 ## Design system
 
@@ -116,6 +119,11 @@ Groups, roles, join codes, the shared-progress privacy boundary and history rule
 
 User management, manager scope, data corrections, activation, PIN reset and audit:
 [`docs/admin.md`](./docs/admin.md).
+
+## Deployment
+
+PWA, Vercel, the Supabase cloud project, Edge Functions, secrets and the deployment
+checklist: [`docs/deployment.md`](./docs/deployment.md).
 
 ## Database
 

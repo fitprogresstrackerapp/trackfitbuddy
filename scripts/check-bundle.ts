@@ -1,30 +1,29 @@
 /**
- * Fails if the production bundle (dist/) contains server-only secrets:
- * service-role JWTs, secret API keys (Supabase and AI providers), or the names/values of
- * server secrets.
- * Run after `npm run build`.
+ * Fails loudly if the production output (dist/) contains server-only secrets or
+ * code: service-role/secret keys, AI provider keys, PIN secret, connection
+ * strings, server env names, Edge Function / AI prompt / mock-provider code,
+ * source maps or env files. Also rejects unsafe VITE_ variables.
+ * Run after `npm run build` (Vercel runs it as part of the build command).
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { loadEnv } from 'vite'
+
+import { forbiddenFile, scanBundleText } from './lib/bundle-scan.ts'
 import { readLocalServerEnv } from './lib/local-env.ts'
+import { publicEnvProblems } from './lib/public-env-guard.ts'
 
 const DIST = 'dist'
-const JWT = /eyJ[A-Za-z0-9_-]+\.(eyJ[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g
-const FORBIDDEN_MARKERS = [
-  'SERVICE_ROLE',
-  'service_role_key',
+const BINARY = /\.(png|jpe?g|webp|ico|woff2?)$/i
+const SERVER_ENV_NAMES = [
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SERVICE_ROLE_KEY',
   'PIN_AUTH_SECRET',
-  // AI provider secrets and server-only provider code (Prompt 10).
   'ANTHROPIC_API_KEY',
-  'OPENAI_API_KEY',
-  'x-api-key',
+  'SUPABASE_DB_PASSWORD',
+  'DATABASE_URL',
 ]
-// A real secret API key. (supabase-js itself contains the bare `sb_secret_` prefix
-// in a key-type check, which is not a secret.)
-const SECRET_API_KEY = /sb_secret_[A-Za-z0-9_-]{16,}/
-// Anthropic / OpenAI-style secret keys.
-const AI_API_KEY = /sk-(ant-)?[A-Za-z0-9_-]{32,}/
 
 function listFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -33,54 +32,39 @@ function listFiles(dir: string): string[] {
   })
 }
 
-function jwtRole(payloadSegment: string): string | null {
+// Actual secret values known to this machine / build environment.
+const secretValues = SERVER_ENV_NAMES.map((name) => process.env[name] ?? '').filter(Boolean)
+if (!process.env.CI && !process.env.VERCEL) {
   try {
-    const payload: unknown = JSON.parse(Buffer.from(payloadSegment, 'base64url').toString('utf8'))
-    return typeof payload === 'object' &&
-      payload !== null &&
-      'role' in payload &&
-      typeof payload.role === 'string'
-      ? payload.role
-      : null
+    const env = readLocalServerEnv()
+    secretValues.push(env.serviceRoleKey, env.pinAuthSecret)
+    const aiKey = /^ANTHROPIC_API_KEY=(.+)$/m.exec(
+      readFileSync('supabase/functions/.env', 'utf8'),
+    )?.[1]
+    if (aiKey) secretValues.push(aiKey.trim())
   } catch {
-    return null
+    // Local stack not running: pattern checks still apply.
   }
 }
 
-const secretValues: string[] = []
-try {
-  const env = readLocalServerEnv()
-  secretValues.push(env.serviceRoleKey, env.pinAuthSecret)
-  const aiKey = /^ANTHROPIC_API_KEY=(.+)$/m.exec(
-    readFileSync('supabase/functions/.env', 'utf8'),
-  )?.[1]
-  if (aiKey) secretValues.push(aiKey.trim())
-} catch {
-  // Local stack not running: marker and JWT checks still apply.
-}
+const findings = publicEnvProblems({
+  ...loadEnv('production', process.cwd(), 'VITE_'),
+  ...process.env,
+}).map((problem) => `environment: ${problem}`)
 
-const findings: string[] = []
-const files = listFiles(DIST).filter((file) => /\.(js|html|css|map|json|txt)$/.test(file))
-
+const files = listFiles(DIST)
 for (const file of files) {
-  const text = readFileSync(file, 'utf8')
-  for (const marker of FORBIDDEN_MARKERS) {
-    if (text.includes(marker)) findings.push(`${file}: contains "${marker}"`)
-  }
-  if (SECRET_API_KEY.test(text)) findings.push(`${file}: contains a secret API key`)
-  if (AI_API_KEY.test(text)) findings.push(`${file}: contains an AI provider API key`)
-  for (const value of secretValues) {
-    if (value && text.includes(value)) findings.push(`${file}: contains a server secret value`)
-  }
-  for (const match of text.matchAll(JWT)) {
-    const role = match[1] ? jwtRole(match[1]) : null
-    if (role && role !== 'anon') findings.push(`${file}: contains a JWT with role "${role}"`)
-  }
+  const forbidden = forbiddenFile(file)
+  if (forbidden) findings.push(forbidden)
+  if (BINARY.test(file)) continue
+  findings.push(...scanBundleText(file, readFileSync(file, 'utf8'), secretValues))
 }
 
 if (findings.length > 0) {
-  console.error(`Bundle secret check FAILED:\n${findings.join('\n')}`)
+  console.error(
+    `\n✖ Bundle secret check FAILED (${String(findings.length)}):\n- ${findings.join('\n- ')}\n`,
+  )
   process.exitCode = 1
 } else {
-  console.log(`Bundle secret check passed (${files.length} files scanned).`)
+  console.log(`Bundle secret check passed (${String(files.length)} files scanned).`)
 }

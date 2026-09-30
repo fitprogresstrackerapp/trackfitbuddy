@@ -356,11 +356,14 @@ accepted.
 
 - No automatic (cron) processing, and no background worker. A batch runs within one
   request, and the admin page continues automatically while it is open.
-- The Claude provider is implemented but not exercised by tests, which must never call
-  a real AI. Confirm it with a real key in a staging project first.
+- The Claude provider is not exercised by the automated tests, which must never call a
+  real AI. Its request and response handling was verified against a local imitation of
+  the Messages API (see [deployment.md](./deployment.md#ai-configuration)). A live
+  request still needs a real key in a staging project.
 - The Edge Function imports the shared engine from `src/`, which is outside
-  `supabase/functions/`. This works with the local edge runtime and `deno check`;
-  confirm bundling on the first cloud deploy.
+  `supabase/functions/`. `npm run functions:bundle` bundles it with the same bundler as
+  `supabase functions deploy`, and runs the bundle with no project source. A deploy to
+  a hosted project has not happened yet.
 - Token estimates before the call are conservative (3 characters per token). Pricing is
   maintained manually; the INR prices assume an exchange rate.
 - Snapshots are written 62 days ahead. A user not reprocessed for longer has later days
