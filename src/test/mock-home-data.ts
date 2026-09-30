@@ -1,10 +1,11 @@
 import { vi } from 'vitest'
 
+import type * as GroupsData from '@/features/groups/api/groups-data'
 import type * as ProfileData from '@/features/profile/api/profile-data'
 import type * as RecommendationData from '@/features/recommendations/api/recommendation-data'
 
 /**
- * Stubs Home, Food, Training, Progress, Profile and recommendation data access so route/auth tests that land on those
+ * Stubs Home, Food, Training, Progress, Profile, recommendation and Groups data access so route/auth tests that land on those
  * pages never hit the network. Import this module at the top of such tests.
  */
 vi.mock('@/features/home/api/home-data', () => ({
@@ -108,5 +109,15 @@ vi.mock('@/features/recommendations/api/recommendation-data', async (importOrigi
     ),
     fetchRecommendationHistory: vi.fn(() => Promise.resolve([])),
     saveMonthlyFeedback: vi.fn(),
+  }
+})
+
+vi.mock('@/features/groups/api/groups-data', async (importOriginal) => {
+  const actual = await importOriginal<typeof GroupsData>()
+  return {
+    ...actual,
+    fetchMyGroups: vi.fn(() => Promise.resolve([])),
+    fetchGroupMembers: vi.fn(() => Promise.resolve([])),
+    fetchGroupDay: vi.fn(() => Promise.resolve([])),
   }
 })

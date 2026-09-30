@@ -368,7 +368,7 @@ insert into tests.ids
 select 'bob_cycle2', public.complete_recommendation_attempt(tests.attempt('00000000-0000-0000-0000-0000000000b2', 'PROCESSING'),
   '{}', tests.output(3, 2200), '[]');
 select is(
-  (select array_agg(status::text || ':' || final_calories order by created_at)
+  (select array_agg(status::text || ':' || final_calories order by status = 'REPLACED' desc)
    from public.recommendation_cycles where user_id = '00000000-0000-0000-0000-0000000000b2'),
   array['REPLACED:2100', 'IN_REVIEW:2200'], 'the previous recommendation is kept (replaced), the new one is current');
 select is(

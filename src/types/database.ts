@@ -2873,6 +2873,13 @@ export type Database = {
         Returns: string
       }
       copy_meal: { Args: { p_source_meal_id: string; p_target_date: string }; Returns: string }
+      create_group: {
+        Args: { p_description?: string; p_name: string }
+        Returns: {
+          code: string
+          id: string
+        }[]
+      }
       daily_nutrition: {
         Args: { p_end: string; p_start: string }
         Returns: {
@@ -2933,10 +2940,35 @@ export type Database = {
           protein_g: number
           protein_target_g: number
           steps: number
+          steps_target: number
           user_id: string
           workout_logged: boolean
         }[]
       }
+      get_group_members: {
+        Args: { p_group_id: string }
+        Returns: {
+          group_role: Database['public']['Enums']['group_role']
+          joined_at: string
+          name: string
+          user_id: string
+        }[]
+      }
+      get_my_groups: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          code: string
+          description: string
+          history_from: string
+          id: string
+          joined_at: string
+          member_count: number
+          my_role: Database['public']['Enums']['group_role']
+          name: string
+        }[]
+      }
+      join_group: { Args: { p_code: string }; Returns: string }
+      leave_group: { Args: { p_group_id: string }; Returns: undefined }
       log_activity: {
         Args: {
           p_date: string
@@ -2968,6 +3000,16 @@ export type Database = {
           p_type: string
         }
         Returns: string
+      }
+      preview_group: {
+        Args: { p_code: string }
+        Returns: {
+          already_member: boolean
+          description: string
+          id: string
+          member_count: number
+          name: string
+        }[]
       }
       recommendation_daily_nutrition: {
         Args: { p_end: string; p_start: string; p_user_id: string }
@@ -3005,6 +3047,7 @@ export type Database = {
         Args: { p_run_id: string; p_stopped_by_budget?: boolean }
         Returns: Database['public']['Enums']['processing_run_status']
       }
+      remove_group_member: { Args: { p_group_id: string; p_user_id: string }; Returns: undefined }
       review_recommendation: {
         Args: {
           p_calories: number
@@ -3045,6 +3088,14 @@ export type Database = {
       set_goal: {
         Args: { p_description?: string; p_focuses: string[]; p_long_term_goal: string }
         Returns: string
+      }
+      set_group_member_role: {
+        Args: {
+          p_group_id: string
+          p_role: Database['public']['Enums']['group_role']
+          p_user_id: string
+        }
+        Returns: undefined
       }
       skip_recommendation_attempt: {
         Args: { p_attempt_id: string; p_reason: string }

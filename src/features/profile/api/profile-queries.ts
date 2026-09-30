@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { useAuth } from '@/features/auth/auth-context'
 import type { Gender } from '@/features/auth/types'
+import { groupKeys } from '@/features/groups/api/groups-queries'
 import { homeKeys } from '@/features/home/api/home-queries'
 import { progressKeys } from '@/features/progress/api/progress-queries'
 import { trainingKeys } from '@/features/training/api/training-queries'
@@ -154,7 +155,12 @@ export function useProfileMutations(userId: string) {
   })
 
   const afterSteps = () =>
-    invalidate(profileKeys.stepsAll(userId), homeKeys.all(userId), progressKeys.all(userId))
+    invalidate(
+      profileKeys.stepsAll(userId),
+      homeKeys.all(userId),
+      progressKeys.all(userId),
+      groupKeys.all(userId),
+    )
   const addSteps = useMutation({
     mutationFn: (input: StepsEntryInput) => logSteps(supabase, input),
     onSuccess: afterSteps,

@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
+import { groupKeys } from '@/features/groups/api/groups-queries'
 import { homeKeys } from '@/features/home/api/home-queries'
 import { progressKeys } from '@/features/progress/api/progress-queries'
 import { fetchTargetsForDate } from '@/features/nutrition/api/targets'
@@ -147,6 +148,7 @@ async function invalidateAfterMealChange(queryClient: QueryClient, userId: strin
     queryClient.invalidateQueries({ queryKey: foodKeys.copyCandidates(userId) }),
     queryClient.invalidateQueries({ queryKey: homeKeys.all(userId) }),
     queryClient.invalidateQueries({ queryKey: progressKeys.all(userId) }),
+    queryClient.invalidateQueries({ queryKey: groupKeys.all(userId) }),
   ])
 }
 

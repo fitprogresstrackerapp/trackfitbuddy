@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import { groupKeys } from '@/features/groups/api/groups-queries'
 import { homeKeys } from '@/features/home/api/home-queries'
 import { progressKeys } from '@/features/progress/api/progress-queries'
 import { getSupabaseClient } from '@/lib/supabase/client'
@@ -74,6 +75,7 @@ export function useTrainingMutations(userId: string) {
       queryClient.invalidateQueries({ queryKey: trainingKeys.weeks(userId) }),
       queryClient.invalidateQueries({ queryKey: homeKeys.all(userId) }),
       queryClient.invalidateQueries({ queryKey: progressKeys.all(userId) }),
+      queryClient.invalidateQueries({ queryKey: groupKeys.all(userId) }),
     ])
 
   const create = useMutation({

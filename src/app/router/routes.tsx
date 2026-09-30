@@ -6,6 +6,7 @@ import { ROUTES } from '@/constants/routes'
 import { LoginPage } from '@/features/auth/pages/login-page'
 import { ADMIN_ROLES } from '@/features/auth/lib/roles'
 import { FoodPage } from '@/features/food/pages/food-page'
+import { GroupDetailPage } from '@/features/groups/pages/group-detail-page'
 import { GroupsPage } from '@/features/groups/pages/groups-page'
 import { HomePage } from '@/features/home/pages/home-page'
 import { OnboardingPage } from '@/features/profile/pages/onboarding-page'
@@ -106,6 +107,7 @@ export const appRoutes: RouteObject[] = [
                   { path: ROUTES.workout, Component: WorkoutPage },
                   { path: ROUTES.progress, lazy: loadProgressPage },
                   { path: ROUTES.groups, Component: GroupsPage },
+                  { path: `${ROUTES.groups}/:groupId`, Component: GroupDetailPage },
                   { path: ROUTES.profile, Component: ProfilePage },
                 ],
               },

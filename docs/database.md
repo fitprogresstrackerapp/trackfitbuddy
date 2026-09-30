@@ -5,22 +5,23 @@ The PostgreSQL / Supabase data model, and the security model built on it. The SQ
 
 ## Migrations
 
-| File                                       | Contents                                                                                                                                                                |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `…0100_extensions_and_types.sql`           | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                                                                                       |
-| `…0200_profiles_roles_settings.sql`        | profiles, user_roles, manager assignments, system_settings, access helper functions                                                                                     |
-| `…0300_goals_and_recommendations.sql`      | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                                                                               |
-| `…0400_food_and_meals.sql`                 | food submissions, food items and versions, merges, meals, meal items (snapshots)                                                                                        |
-| `…0500_training_and_body.sql`              | workouts, activities, steps, InBody reports/metrics, weight history                                                                                                     |
-| `…0600_groups.sql`                         | groups, memberships, group helpers, `get_group_member_day()`                                                                                                            |
-| `…0700_audit_and_record_integrity.sql`     | audit log, record guard (locking and soft delete), audit triggers                                                                                                       |
-| `…0800_rls_policies_and_views.sql`         | grants, RLS policies, read views                                                                                                                                        |
-| `20260928000100_pin_authentication.sql`    | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                                                            |
-| `20261001000100_food_logging.sql`          | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                                                         |
-| `20261002000100_training_logging.sql`      | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training                                        |
-| `20261003000100_progress_analytics.sql`    | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                                                                   |
-| `20261004000100_profile_body_review.sql`   | `log_weight`, `log_steps` (late entry), `set_goal` (goal versions), `review_recommendation` / `accept_recommendation`, InBody storage bucket and policies               |
-| `20261005000100_recommendation_engine.sql` | AI recommendation engine: attempt/run extensions, one-open-attempt index, AI settings, processing functions (service role), admin overview/usage, feedback window guard |
+| File                                       | Contents                                                                                                                                                                                                        |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `…0100_extensions_and_types.sql`           | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                                                                                                                               |
+| `…0200_profiles_roles_settings.sql`        | profiles, user_roles, manager assignments, system_settings, access helper functions                                                                                                                             |
+| `…0300_goals_and_recommendations.sql`      | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                                                                                                                       |
+| `…0400_food_and_meals.sql`                 | food submissions, food items and versions, merges, meals, meal items (snapshots)                                                                                                                                |
+| `…0500_training_and_body.sql`              | workouts, activities, steps, InBody reports/metrics, weight history                                                                                                                                             |
+| `…0600_groups.sql`                         | groups, memberships, group helpers, `get_group_member_day()`                                                                                                                                                    |
+| `…0700_audit_and_record_integrity.sql`     | audit log, record guard (locking and soft delete), audit triggers                                                                                                                                               |
+| `…0800_rls_policies_and_views.sql`         | grants, RLS policies, read views                                                                                                                                                                                |
+| `20260928000100_pin_authentication.sql`    | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                                                                                                    |
+| `20261001000100_food_logging.sql`          | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                                                                                                 |
+| `20261002000100_training_logging.sql`      | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training                                                                                |
+| `20261003000100_progress_analytics.sql`    | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                                                                                                           |
+| `20261004000100_profile_body_review.sql`   | `log_weight`, `log_steps` (late entry), `set_goal` (goal versions), `review_recommendation` / `accept_recommendation`, InBody storage bucket and policies                                                       |
+| `20261005000100_recommendation_engine.sql` | AI recommendation engine: attempt/run extensions, one-open-attempt index, AI settings, processing functions (service role), admin overview/usage, feedback window guard                                         |
+| `20261006000100_groups_feature.sql`        | Groups: create/preview/join/leave/remove/role functions, roster and my-groups reads, rebuilt `get_group_member_day` (targets by date, history rule), admin continuity, group audit, `is_group_admin` never NULL |
 
 ### Workflow
 
@@ -118,11 +119,19 @@ Group members **never** read each other's tables directly. They call
 - steps
 - whether a workout was logged
 
-Weight, body fat, InBody and calculation inputs are never returned. The function only
-answers for current members of an active group, only about current active members, and
-only for dates on or after the day the viewed member joined. When someone leaves or is
-removed, their data disappears from the group. Rejoining creates a new membership row,
-so data from before they left stays hidden.
+Weight, body fat, InBody and calculation inputs are never returned.
+
+- The function answers only for current members of an active group, and only about
+  current active members.
+- A member is shown only for dates on or after the day they joined. A `MEMBER` viewer
+  also sees nothing from before their own join day; leaders and admins may view earlier
+  dates.
+- Targets are the ones in force on the date: the snapshot, otherwise the covering
+  cycle.
+- When someone leaves or is removed, their data disappears from the group at once.
+  Rejoining creates a new membership row, so data from before they left stays hidden.
+
+All group actions are server functions; see [`docs/groups.md`](./groups.md).
 
 ### Service-role boundary
 
@@ -247,11 +256,14 @@ For updates, only the changed columns are stored. Callers can attach a reason wi
   only joins the shared database after admin approval.
 - **Raw AI I/O lives on the processing attempt, not the cycle.** The cycle references it,
   to avoid duplicate copies. The same applies to review and lock fields.
-- **Group history visibility:** members see data only from the viewed member's join date
-  onward. The spec says a Group Leader may have "limited historical access", but that
-  isn't defined yet, so for now LEADER has no extra access.
-- **Group creators** can always read their group row. This is needed for
-  `INSERT … RETURNING`. It exposes the group's name and code only, never member data.
+- **Group history visibility:** a member's data is shown only from their own join day.
+  The spec gives Group Leaders "limited historical access": a `LEADER` or `ADMIN` may
+  view dates from before they joined (back to group creation), while a `MEMBER` sees only
+  dates from their own join day.
+- **Group continuity:** the only group admin must appoint another admin before leaving.
+  The last member leaving deactivates the group.
+- **Group creators** read their group row only while creating it (for
+  `INSERT … RETURNING`). After leaving, they lose access like anyone else.
 - **`ai_monthly_budget`** defaults to null (not configured), so processing can't start
   until an admin sets a budget.
 
@@ -308,6 +320,6 @@ Added in the authentication phase. See [`docs/auth.md`](./auth.md).
 
 - Admin-facing Edge Functions for user creation and PIN reset. The same steps exist today
   in `scripts/lib/provision-user.ts`.
-- Server-side functions for joining a group by code, and nightly locking.
+- Nightly locking.
   (Recommendation review/accept and `daily_nutrition` now exist; see the migrations above.)
 - Automatic (cron) recommendation processing: processing is admin-triggered for now.

@@ -7,8 +7,9 @@ analysis tool, not an enforcement-based coach. The full product and technical sp
 
 > **Status:** Foundation, database with RLS, phone + PIN login with onboarding, the design
 > system and shell, the Home dashboard, Food & Nutrition tracking, Workout & Activity
-> tracking, Progress, and Profile (goals, steps, body, recommendation review) are in place.
-> Groups and Admin are placeholders.
+> tracking, Progress, Profile (goals, steps, body, recommendation review), monthly AI
+> recommendations (admin processing) and Groups are in place. The other Admin sections are
+> placeholders.
 
 ## Tech stack
 
@@ -100,6 +101,16 @@ Ranges, historical targets, adherence and body trends: [`docs/progress.md`](./do
 
 Profile fields, goals and cycle boundaries, steps, weight, InBody and recommendation review:
 [`docs/profile.md`](./docs/profile.md).
+
+## Recommendations
+
+Monthly AI recommendation engine, processing, budget and feedback:
+[`docs/recommendations.md`](./docs/recommendations.md).
+
+## Groups
+
+Groups, roles, join codes, the shared-progress privacy boundary and history rule:
+[`docs/groups.md`](./docs/groups.md).
 
 ## Database
 
