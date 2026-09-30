@@ -63,6 +63,9 @@ export const PROFILE_NAV: NavItem = {
 /** Admin entry point, shown only to ADMIN / SUPER_ADMIN (UI gating only). */
 export const ADMIN_ENTRY: NavItem = { label: 'Admin', to: ROUTES.admin, icon: ICONS.admin }
 
+/** Managers / trainers: their assigned users only (read-only). */
+export const MANAGER_ENTRY: NavItem = { label: 'My users', to: ROUTES.adminUsers, icon: UserCog }
+
 /** Admin sections (spec §78). Separate from the user navigation. */
 export const ADMIN_NAV: readonly NavItem[] = [
   {
@@ -120,6 +123,22 @@ export const ADMIN_NAV: readonly NavItem[] = [
     description: 'Tolerances, AI budget and processing configuration.',
   },
 ]
+
+/**
+ * Staff entry point for a set of global roles (navigation only; every page and
+ * action is authorized server-side).
+ */
+export function staffEntryFor(roles: readonly string[]): NavItem | null {
+  if (roles.includes('SUPER_ADMIN') || roles.includes('ADMIN')) return ADMIN_ENTRY
+  if (roles.includes('MANAGER')) return MANAGER_ENTRY
+  return null
+}
+
+/** Admin sections a role can open: managers only see Users. */
+export function adminNavFor(roles: readonly string[]): readonly NavItem[] {
+  if (roles.includes('SUPER_ADMIN') || roles.includes('ADMIN')) return ADMIN_NAV
+  return ADMIN_NAV.filter((item) => item.to === ROUTES.adminUsers)
+}
 
 /** The nav item whose section contains `pathname` (longest match wins). */
 export function findNavItem(items: readonly NavItem[], pathname: string): NavItem | undefined {

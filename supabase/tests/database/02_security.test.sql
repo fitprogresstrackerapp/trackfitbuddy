@@ -60,6 +60,15 @@ insert into public.user_roles (user_id, role) values
 insert into public.manager_user_assignments (manager_id, user_id)
 values ('00000000-0000-0000-0000-0000000000d4', '00000000-0000-0000-0000-0000000000a1');
 
+-- Accounts left by other suites (e.g. integration runs) must not count as another
+-- active super admin in the "last super admin" check: deactivate them in this
+-- rolled-back transaction.
+alter table public.profiles disable trigger user;
+update public.profiles set is_active = false, deleted_at = now()
+where id in (select user_id from public.user_roles where role = 'SUPER_ADMIN')
+  and id <> '00000000-0000-0000-0000-0000000000f6' and is_active;
+alter table public.profiles enable trigger user;
+
 insert into public.food_items (id, name, serving_quantity, serving_unit, calories, protein_g, carbs_g, fat_g, fiber_g)
 values ('00000000-0000-0000-0004-000000000001', 'Test Food', 100, 'g', 200, 20, 10, 5, 2);
 

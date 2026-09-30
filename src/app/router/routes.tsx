@@ -4,7 +4,7 @@ import { PageLoader } from '@/components/common/loading-state'
 import { ADMIN_NAV } from '@/constants/navigation'
 import { ROUTES } from '@/constants/routes'
 import { LoginPage } from '@/features/auth/pages/login-page'
-import { ADMIN_ROLES } from '@/features/auth/lib/roles'
+import { ADMIN_ROLES, STAFF_ROLES } from '@/features/auth/lib/roles'
 import { FoodPage } from '@/features/food/pages/food-page'
 import { GroupDetailPage } from '@/features/groups/pages/group-detail-page'
 import { GroupsPage } from '@/features/groups/pages/groups-page'
@@ -48,6 +48,33 @@ async function loadProgressPage() {
 async function loadAdminSection() {
   const { AdminSectionPage } = await import('@/features/admin/pages/admin-section-page')
   return { Component: AdminSectionPage }
+}
+
+async function loadAdminDashboard() {
+  const { AdminDashboardPage } = await import('@/features/admin/pages/admin-dashboard-page')
+  return { Component: AdminDashboardPage }
+}
+
+async function loadAdminUsers() {
+  const { AdminUsersPage } = await import('@/features/admin/pages/admin-users-page')
+  return { Component: AdminUsersPage }
+}
+
+async function loadAdminUserDetail() {
+  const { AdminUserDetailPage } = await import('@/features/admin/pages/admin-user-detail-page')
+  return { Component: AdminUserDetailPage }
+}
+
+async function loadAdminAudit() {
+  const { AdminAuditPage } = await import('@/features/admin/pages/admin-audit-page')
+  return { Component: AdminAuditPage }
+}
+
+/** Lazy page for an admin-only section (placeholder where not built yet). */
+function adminSectionLoader(to: string) {
+  if (to === ROUTES.adminProcessing) return loadRecommendationsAdmin
+  if (to === ROUTES.adminAudit) return loadAdminAudit
+  return loadAdminSection
 }
 
 async function loadRecommendationsAdmin() {
@@ -112,22 +139,30 @@ export const appRoutes: RouteObject[] = [
                 ],
               },
               {
-                element: <RequireRole roles={ADMIN_ROLES} />,
+                // Staff only. Users are open to managers (read-only, and the
+                // database limits them to their assigned users); every other
+                // admin section is ADMIN / SUPER_ADMIN only.
+                element: <RequireRole roles={STAFF_ROLES} />,
                 children: [
                   {
                     path: ROUTES.admin,
                     Component: AdminLayout,
-                    children: ADMIN_NAV.map((item) =>
-                      item.to === ROUTES.admin
-                        ? { index: true, lazy: loadAdminSection }
-                        : {
-                            path: item.to.slice(ROUTES.admin.length + 1),
-                            lazy:
-                              item.to === ROUTES.adminProcessing
-                                ? loadRecommendationsAdmin
-                                : loadAdminSection,
-                          },
-                    ),
+                    children: [
+                      { path: 'users', lazy: loadAdminUsers },
+                      { path: 'users/:userId', lazy: loadAdminUserDetail },
+                      {
+                        element: <RequireRole roles={ADMIN_ROLES} />,
+                        children: ADMIN_NAV.filter((item) => item.to !== ROUTES.adminUsers).map(
+                          (item) =>
+                            item.to === ROUTES.admin
+                              ? { index: true, lazy: loadAdminDashboard }
+                              : {
+                                  path: item.to.slice(ROUTES.admin.length + 1),
+                                  lazy: adminSectionLoader(item.to),
+                                },
+                        ),
+                      },
+                    ],
                   },
                 ],
               },

@@ -5,23 +5,24 @@ The PostgreSQL / Supabase data model, and the security model built on it. The SQ
 
 ## Migrations
 
-| File                                       | Contents                                                                                                                                                                                                        |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `…0100_extensions_and_types.sql`           | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                                                                                                                               |
-| `…0200_profiles_roles_settings.sql`        | profiles, user_roles, manager assignments, system_settings, access helper functions                                                                                                                             |
-| `…0300_goals_and_recommendations.sql`      | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                                                                                                                       |
-| `…0400_food_and_meals.sql`                 | food submissions, food items and versions, merges, meals, meal items (snapshots)                                                                                                                                |
-| `…0500_training_and_body.sql`              | workouts, activities, steps, InBody reports/metrics, weight history                                                                                                                                             |
-| `…0600_groups.sql`                         | groups, memberships, group helpers, `get_group_member_day()`                                                                                                                                                    |
-| `…0700_audit_and_record_integrity.sql`     | audit log, record guard (locking and soft delete), audit triggers                                                                                                                                               |
-| `…0800_rls_policies_and_views.sql`         | grants, RLS policies, read views                                                                                                                                                                                |
-| `20260928000100_pin_authentication.sql`    | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                                                                                                    |
-| `20261001000100_food_logging.sql`          | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                                                                                                 |
-| `20261002000100_training_logging.sql`      | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training                                                                                |
-| `20261003000100_progress_analytics.sql`    | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                                                                                                           |
-| `20261004000100_profile_body_review.sql`   | `log_weight`, `log_steps` (late entry), `set_goal` (goal versions), `review_recommendation` / `accept_recommendation`, InBody storage bucket and policies                                                       |
-| `20261005000100_recommendation_engine.sql` | AI recommendation engine: attempt/run extensions, one-open-attempt index, AI settings, processing functions (service role), admin overview/usage, feedback window guard                                         |
-| `20261006000100_groups_feature.sql`        | Groups: create/preview/join/leave/remove/role functions, roster and my-groups reads, rebuilt `get_group_member_day` (targets by date, history rule), admin continuity, group audit, `is_group_admin` never NULL |
+| File                                       | Contents                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `…0100_extensions_and_types.sql`           | `pg_trgm`, `btree_gist`, `private` schema, enums, generic helpers                                                                                                                                                                                                                                                                    |
+| `…0200_profiles_roles_settings.sql`        | profiles, user_roles, manager assignments, system_settings, access helper functions                                                                                                                                                                                                                                                  |
+| `…0300_goals_and_recommendations.sql`      | goals, processing runs/users, AI usage, recommendation cycles, feedback, target snapshots                                                                                                                                                                                                                                            |
+| `…0400_food_and_meals.sql`                 | food submissions, food items and versions, merges, meals, meal items (snapshots)                                                                                                                                                                                                                                                     |
+| `…0500_training_and_body.sql`              | workouts, activities, steps, InBody reports/metrics, weight history                                                                                                                                                                                                                                                                  |
+| `…0600_groups.sql`                         | groups, memberships, group helpers, `get_group_member_day()`                                                                                                                                                                                                                                                                         |
+| `…0700_audit_and_record_integrity.sql`     | audit log, record guard (locking and soft delete), audit triggers                                                                                                                                                                                                                                                                    |
+| `…0800_rls_policies_and_views.sql`         | grants, RLS policies, read views                                                                                                                                                                                                                                                                                                     |
+| `20260928000100_pin_authentication.sql`    | PIN hashes and lockout (`private` schema), `auth_verify_pin`, `auth_set_pin`, `save_onboarding_measurements`                                                                                                                                                                                                                         |
+| `20261001000100_food_logging.sql`          | late-entry grants, record guard update, `log_meal`, `add_meal_items`, `copy_meal`, `search_foods`, `food_usage`                                                                                                                                                                                                                      |
+| `20261002000100_training_logging.sql`      | optional names, DB-computed calorie estimates (`training_calorie_rates`), `log_workout`, `log_activity`, late entry for training                                                                                                                                                                                                     |
+| `20261003000100_progress_analytics.sql`    | `daily_nutrition()` — per-day totals of the caller's meal-item snapshots for Progress                                                                                                                                                                                                                                                |
+| `20261004000100_profile_body_review.sql`   | `log_weight`, `log_steps` (late entry), `set_goal` (goal versions), `review_recommendation` / `accept_recommendation`, InBody storage bucket and policies                                                                                                                                                                            |
+| `20261005000100_recommendation_engine.sql` | AI recommendation engine: attempt/run extensions, one-open-attempt index, AI settings, processing functions (service role), admin overview/usage, feedback window guard                                                                                                                                                              |
+| `20261006000100_groups_feature.sql`        | Groups: create/preview/join/leave/remove/role functions, roster and my-groups reads, rebuilt `get_group_member_day` (targets by date, history rule), admin continuity, group audit, `is_group_admin` never NULL                                                                                                                      |
+| `20261007000100_admin_management.sql`      | Admin management: authority helpers, domain-specific corrections (`admin_correct_*`, `admin_delete_record`) with version checks, `admin_set_user_active`, `admin_reset_pin` (service role), admin readers (`admin_list_users`, `admin_user_account`, `admin_audit_log`, `admin_dashboard`), `ADMIN_CORRECTION` audit action override |
 
 ### Workflow
 
@@ -234,7 +235,10 @@ including the owner, and clients have SELECT only (admins). Rows are written by
   deactivation, group removals, and so on.
 
 For updates, only the changed columns are stored. Callers can attach a reason with
-`set_config('app.audit_reason', '…', true)`.
+`set_config('app.audit_reason', '…', true)`. Admin correction functions also set
+`app.audit_action = 'ADMIN_CORRECTION'`, so every correction is labelled as such.
+Admins read the log through `admin_audit_log()`, which filters, pages and strips any
+`pin_hash`. See [`docs/admin.md`](./admin.md).
 
 ## Decisions not specified by the spec
 
@@ -264,6 +268,13 @@ For updates, only the changed columns are stored. Callers can attach a reason wi
   The last member leaving deactivates the group.
 - **Group creators** read their group row only while creating it (for
   `INSERT … RETURNING`). After leaving, they lose access like anyone else.
+- **Admin authority:** an ADMIN administers USER and MANAGER accounts only. Admin
+  accounts are administered by a SUPER_ADMIN, nobody administers themselves, and
+  nobody creates a SUPER_ADMIN through the app.
+- **Corrections update the active row in place.** The original values are kept in
+  `audit_logs`. A meal-item food change soft-deletes the old item and adds a new one.
+  Locks, cycles and target snapshots are never changed by a correction.
+- **Managers are read-only** for their assigned users.
 - **`ai_monthly_budget`** defaults to null (not configured), so processing can't start
   until an admin sets a budget.
 
@@ -318,8 +329,7 @@ Added in the authentication phase. See [`docs/auth.md`](./auth.md).
 
 ## Not yet in the database (later phases)
 
-- Admin-facing Edge Functions for user creation and PIN reset. The same steps exist today
-  in `scripts/lib/provision-user.ts`.
+- Manager assignment UI (assignments are inserted directly for now).
 - Nightly locking.
   (Recommendation review/accept and `daily_nutrition` now exist; see the migrations above.)
 - Automatic (cron) recommendation processing: processing is admin-triggered for now.

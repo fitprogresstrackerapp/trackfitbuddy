@@ -1,8 +1,9 @@
 import { ArrowLeft } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 
-import { ADMIN_NAV } from '@/constants/navigation'
+import { adminNavFor, type NavItem } from '@/constants/navigation'
 import { ROUTES } from '@/constants/routes'
+import { useAccount } from '@/features/auth/auth-context'
 import { cn } from '@/lib/utils'
 
 import { ProfileMenu } from './components/profile-menu'
@@ -13,11 +14,11 @@ import { TopBar } from './components/top-bar'
 const BACK_TO_APP = { label: 'Back to app', to: ROUTES.home, icon: ArrowLeft }
 
 /** Admin sections as a horizontally scrolling strip below lg. */
-function AdminSectionStrip() {
+function AdminSectionStrip({ items }: { items: readonly NavItem[] }) {
   return (
     <nav aria-label="Admin" className="border-b border-border lg:hidden">
       <ul className="flex gap-1 overflow-x-auto px-4 py-2 sm:px-6 md:px-8">
-        {ADMIN_NAV.map((item) => (
+        {items.map((item) => (
           <li key={item.to} className="shrink-0">
             <NavLink
               to={item.to}
@@ -51,22 +52,24 @@ function AdminSectionStrip() {
 
 /**
  * Admin shell — same design system, separate navigation (spec §8, §78).
- * Reachable only through the ADMIN / SUPER_ADMIN route guard.
+ * Reachable through the staff route guard; managers get only Users.
  */
 export function AdminLayout() {
+  // Navigation only: managers see Users; every page and action is authorized server-side.
+  const nav = adminNavFor(useAccount().roles)
   return (
     <div className="min-h-dvh">
       <SkipLink />
       <Sidebar
-        items={ADMIN_NAV}
+        items={nav}
         navLabel="Admin"
         tag="Control"
         secondary={<SidebarLink item={BACK_TO_APP} />}
         footer={<ProfileMenu variant="full" />}
       />
       <div className="lg:pl-sidebar">
-        <TopBar items={ADMIN_NAV} tag="Admin" brandClassName="" />
-        <AdminSectionStrip />
+        <TopBar items={nav} tag="Admin" brandClassName="" />
+        <AdminSectionStrip items={nav} />
         <main
           id="main"
           className="mx-auto w-full max-w-(--container-content) px-4 pt-6 pb-14 sm:px-6 md:px-8 md:pt-8 lg:px-12 lg:pt-12"

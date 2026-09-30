@@ -2824,6 +2824,204 @@ export type Database = {
     Functions: {
       accept_recommendation: { Args: { p_cycle_id: string }; Returns: undefined }
       add_meal_items: { Args: { p_items: Json; p_meal_id: string }; Returns: number }
+      admin_audit_log: {
+        Args: {
+          p_action?: Database['public']['Enums']['audit_action']
+          p_actor_search?: string
+          p_entity?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_target_search?: string
+          p_target_user_id?: string
+          p_to?: string
+        }
+        Returns: {
+          action: Database['public']['Enums']['audit_action']
+          actor_name: string
+          actor_user_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          new_values_json: Json
+          old_values_json: Json
+          reason: string
+          target_name: string
+          target_user_id: string
+          total_count: number
+        }[]
+      }
+      admin_can_create_role: {
+        Args: { p_actor_id: string; p_role: Database['public']['Enums']['app_role'] }
+        Returns: boolean
+      }
+      admin_correct_inbody_metrics: {
+        Args: {
+          p_bmi: number
+          p_bmr_kcal: number
+          p_body_fat_percent: number
+          p_expected_updated_at: string
+          p_muscle_mass_kg: number
+          p_reason?: string
+          p_report_id: string
+          p_weight_kg: number
+        }
+        Returns: undefined
+      }
+      admin_correct_meal: {
+        Args: {
+          p_expected_updated_at: string
+          p_meal_category: Database['public']['Enums']['meal_category']
+          p_meal_id: string
+          p_reason?: string
+        }
+        Returns: undefined
+      }
+      admin_correct_meal_item: {
+        Args: {
+          p_expected_updated_at: string
+          p_food_item_id?: string
+          p_item_id: string
+          p_quantity: number
+          p_reason?: string
+        }
+        Returns: string
+      }
+      admin_correct_profile: {
+        Args: {
+          p_activity_level: Database['public']['Enums']['activity_level']
+          p_date_of_birth: string
+          p_expected_updated_at: string
+          p_gender: Database['public']['Enums']['gender']
+          p_height_cm: number
+          p_name: string
+          p_reason?: string
+          p_user_id: string
+          p_workout_days_per_week: number
+        }
+        Returns: undefined
+      }
+      admin_correct_steps: {
+        Args: {
+          p_entry_id: string
+          p_expected_updated_at: string
+          p_reason?: string
+          p_steps: number
+        }
+        Returns: undefined
+      }
+      admin_correct_training: {
+        Args: {
+          p_duration_minutes: number
+          p_expected_updated_at: string
+          p_id: string
+          p_kind: string
+          p_manual_calories: number
+          p_name: string
+          p_reason?: string
+          p_type: string
+        }
+        Returns: undefined
+      }
+      admin_correct_weight: {
+        Args: {
+          p_expected_updated_at: string
+          p_id: string
+          p_reason?: string
+          p_weight_kg: number
+        }
+        Returns: undefined
+      }
+      admin_daily_nutrition: {
+        Args: { p_end: string; p_start: string; p_user_id: string }
+        Returns: {
+          calories: number
+          carbs_g: number
+          fat_g: number
+          fiber_g: number
+          item_count: number
+          nutrition_date: string
+          protein_g: number
+        }[]
+      }
+      admin_dashboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_groups: number
+          active_users: number
+          ai_budget: number
+          ai_currency: string
+          ai_spend: number
+          food_submissions_pending: number
+          inactive_users: number
+          incomplete_profiles: number
+          recommendation_failures: number
+          recommendations_in_review: number
+          recommendations_pending: number
+        }[]
+      }
+      admin_delete_record: {
+        Args: { p_domain: string; p_expected_updated_at: string; p_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      admin_list_users: {
+        Args: {
+          p_active?: boolean
+          p_complete?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_role?: Database['public']['Enums']['app_role']
+          p_search?: string
+        }
+        Returns: {
+          created_at: string
+          is_active: boolean
+          is_profile_complete: boolean
+          last_activity: string
+          missing_fields: string[]
+          name: string
+          phone: string
+          recommendation_status: string
+          roles: Database['public']['Enums']['app_role'][]
+          total_count: number
+          user_id: string
+        }[]
+      }
+      admin_reset_pin: {
+        Args: { p_actor_id: string; p_pin: string; p_reason?: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_set_user_active: {
+        Args: { p_active: boolean; p_reason?: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_user_account: {
+        Args: { p_user_id: string }
+        Returns: {
+          activity_level: Database['public']['Enums']['activity_level']
+          can_administer: boolean
+          created_at: string
+          date_of_birth: string
+          deactivated_at: string
+          deactivated_by_name: string
+          gender: Database['public']['Enums']['gender']
+          height_cm: number
+          hobbies: string
+          is_active: boolean
+          job: string
+          last_activity: string
+          missing_fields: string[]
+          name: string
+          phone: string
+          recommendation_status: string
+          roles: Database['public']['Enums']['app_role'][]
+          timezone: string
+          updated_at: string
+          user_id: string
+          workout_days_per_week: number
+        }[]
+      }
       ai_usage_summary: {
         Args: { p_month: string }
         Returns: {

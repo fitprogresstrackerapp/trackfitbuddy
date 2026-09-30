@@ -22,7 +22,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "supabase:start": "supabase start -x realtime,imgproxy,studio,mailpit,logflare,vector,supavisor",
     "functions:serve": "supabase functions serve --env-file supabase/functions/.env",
-    "functions:check": "cd supabase/functions && deno check --config pin-login/deno.json pin-login/index.ts && deno check --config process-recommendations/deno.json process-recommendations/index.ts && deno lint --config pin-login/deno.json pin-login _shared && deno lint --config process-recommendations/deno.json process-recommendations",
+    "functions:check": "cd supabase/functions && deno check --config pin-login/deno.json pin-login/index.ts && deno check --config process-recommendations/deno.json process-recommendations/index.ts && deno check --config admin-users/deno.json admin-users/index.ts && deno lint --config pin-login/deno.json pin-login _shared && deno lint --config process-recommendations/deno.json process-recommendations && deno lint --config admin-users/deno.json admin-users",
     "check:bundle": "node scripts/check-bundle.ts",
     "user:create": "node scripts/create-user.ts"
   },

@@ -14,6 +14,7 @@ export default defineConfig([
     'src/types/database.ts',
     'supabase/functions/pin-login',
     'supabase/functions/process-recommendations',
+    'supabase/functions/admin-users',
   ]),
   {
     files: ['**/*.{ts,tsx}'],

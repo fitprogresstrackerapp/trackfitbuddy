@@ -11,10 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ADMIN_ENTRY, PROFILE_NAV } from '@/constants/navigation'
+import { PROFILE_NAV, staffEntryFor } from '@/constants/navigation'
 import { useAccount } from '@/features/auth/auth-context'
 import { useLogout } from '@/features/auth/hooks/use-logout'
-import { ADMIN_ROLES, hasAnyRole } from '@/features/auth/lib/roles'
 import type { AppRole } from '@/features/auth/types'
 import { cn } from '@/lib/utils'
 
@@ -36,7 +35,7 @@ export function ProfileMenu({ variant }: { variant: 'compact' | 'full' }) {
   const navigate = useNavigate()
   const name = profile.name ?? 'Account'
   const role = roleLabel(roles)
-  const isAdmin = hasAnyRole(roles, ADMIN_ROLES)
+  const staffEntry = staffEntryFor(roles)
 
   return (
     <DropdownMenu>
@@ -73,10 +72,10 @@ export function ProfileMenu({ variant }: { variant: 'compact' | 'full' }) {
             <PROFILE_NAV.icon aria-hidden="true" />
             {PROFILE_NAV.label}
           </DropdownMenuItem>
-          {isAdmin && (
-            <DropdownMenuItem onSelect={() => void navigate(ADMIN_ENTRY.to)}>
-              <ADMIN_ENTRY.icon aria-hidden="true" />
-              {ADMIN_ENTRY.label}
+          {staffEntry && (
+            <DropdownMenuItem onSelect={() => void navigate(staffEntry.to)}>
+              <staffEntry.icon aria-hidden="true" />
+              {staffEntry.label}
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>

@@ -112,6 +112,11 @@ Monthly AI recommendation engine, processing, budget and feedback:
 Groups, roles, join codes, the shared-progress privacy boundary and history rule:
 [`docs/groups.md`](./docs/groups.md).
 
+## Admin
+
+User management, manager scope, data corrections, activation, PIN reset and audit:
+[`docs/admin.md`](./docs/admin.md).
+
 ## Database
 
 Schema, RLS, historical snapshots, locking and audit are documented in

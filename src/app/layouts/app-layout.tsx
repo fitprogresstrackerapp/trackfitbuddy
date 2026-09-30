@@ -1,8 +1,7 @@
 import { Outlet } from 'react-router'
 
-import { ADMIN_ENTRY, PRIMARY_NAV, PROFILE_NAV } from '@/constants/navigation'
+import { PRIMARY_NAV, PROFILE_NAV, staffEntryFor } from '@/constants/navigation'
 import { useAccount } from '@/features/auth/auth-context'
-import { ADMIN_ROLES, hasAnyRole } from '@/features/auth/lib/roles'
 
 import { BottomNav } from './components/bottom-nav'
 import { NavRail } from './components/nav-rail'
@@ -20,7 +19,7 @@ import { TopBar } from './components/top-bar'
  */
 export function AppLayout() {
   const { roles } = useAccount()
-  const showAdmin = hasAnyRole(roles, ADMIN_ROLES) // navigation only; access is enforced server-side
+  const staffEntry = staffEntryFor(roles) // navigation only; access is enforced server-side
 
   return (
     <div className="min-h-dvh">
@@ -31,7 +30,7 @@ export function AppLayout() {
         secondary={
           <>
             <SidebarLink item={PROFILE_NAV} />
-            {showAdmin && <SidebarLink item={ADMIN_ENTRY} />}
+            {staffEntry && <SidebarLink item={staffEntry} />}
           </>
         }
         footer={<ProfileMenu variant="full" />}
