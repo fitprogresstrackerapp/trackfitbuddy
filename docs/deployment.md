@@ -267,6 +267,146 @@ production project by accident: check the project ref at each step.
 
   A live Claude request has **not** been made. See the checklist.
 
+## Operating the MVP
+
+Day-to-day operation without a developer. "Operator machine" means a trusted computer
+with this repository, the Supabase CLI and the git-ignored `.env.supabase` file.
+
+### Accounts
+
+- **First admin:** created once from the operator machine (Supabase cloud project,
+  step 7). There is no public registration.
+- **Everyone else:** an admin creates the account in the app, Admin → Users → Create
+  user (phone, 4-digit PIN, role User / Manager / Admin). The person signs in and
+  completes onboarding. Only a super admin can create admins; nobody can create a
+  super admin in the app.
+- **Forgotten PIN:** Admin → Users → open the user → Reset PIN. Five wrong PINs within
+  15 minutes lock that phone number for 15 minutes; a PIN reset clears the lock. Users
+  cannot change their own PIN yet.
+- **Leaving users:** Deactivate (same page). They can no longer sign in, an open session
+  ends within minutes, and all records are kept. Activate reverses it. Accounts are
+  never deleted.
+- **Managers:** the Manager role sees only assigned users, read-only. There is no
+  assignment screen yet; assign in the SQL editor:
+  ```sql
+  insert into public.manager_user_assignments (manager_id, user_id)
+  values ('<manager profile id>', '<user profile id>');
+  ```
+  Profile ids are in the address bar of Admin → Users → the user's page.
+
+### Food database
+
+The shared food database starts empty, and Admin → Food Database is a placeholder: foods
+cannot be added or edited in the app yet. Until they exist, a user can only log food by
+creating their own custom foods.
+
+- **Starter catalogue:** `supabase/seeds/starter-foods.json` holds about a hundred common
+  Indian and household foods with **approximate** per-serving values (the app shows them
+  as approximate). Review the file, then load it once from the operator machine:
+  ```powershell
+  $env:SUPABASE_URL = 'https://<ref>.supabase.co'
+  $env:SUPABASE_SERVICE_ROLE_KEY = '<service-role key>'   # Project Settings → API; never commit
+  npm run foods:seed -- --dry-run     # lists what would be added; writes nothing
+  npm run foods:seed
+  ```
+  It is safe to run again: foods already present (same name) are skipped and never
+  changed, and nothing is deleted. To add foods later, add them to the file and run it
+  again.
+- **Correcting a food:** in the SQL editor, update the row in `public.food_items`. Meals
+  already logged keep the values they were logged with (spec §12).
+- **User-submitted foods** stay private to the person who created them ("Pending
+  review"); there is no approval screen yet.
+
+### InBody results
+
+Users upload the report file; nothing reads the file. Until results are entered, the
+report shows "Awaiting results". To enter them:
+
+1. Open the file in the Supabase dashboard: Storage → `inbody-reports` → the folder
+   named with the user's profile id. (The admin screens list reports but cannot open
+   the file yet.)
+2. Find the report's id in the SQL editor:
+   ```sql
+   select id, report_date, file_path from public.inbody_reports
+   where user_id = '<user profile id>' order by report_date desc;
+   ```
+3. Enter the values (the database rejects out-of-range values):
+   ```sql
+   insert into public.inbody_metrics
+     (report_id, user_id, weight_kg, body_fat_percent, muscle_mass_kg, bmi, bmr_kcal)
+   select r.id, r.user_id, 78.6, 23.1, 31.6, 24.3, 1650   -- the report's values; null if absent
+   from public.inbody_reports r where r.id = '<report id>';
+
+   update public.inbody_reports set extraction_status = 'COMPLETED' where id = '<report id>';
+   ```
+
+The weight then appears in the user's weight history as an InBody measurement. Later
+corrections can be made in the app (Admin → Users → the user → InBody → Admin correction).
+
+### Enabling AI recommendations
+
+AI processing is off until both a provider key and a budget exist. To turn it on:
+
+1. **Key:** `npx supabase secrets set ANTHROPIC_API_KEY=<key>` (operator machine). It is a
+   function secret only; never put it in Vercel or a `VITE_` variable.
+2. **Budget:** set `ai_monthly_budget` with the SQL in "AI configuration" above. The
+   amount is in INR and is checked against the estimated cost before every user.
+3. **Prices:** check that `ai_pricing` in `system_settings` matches the provider's current
+   prices for `claude-opus-5`; the budget check and cost figures use it.
+4. **First test:** sign in as an admin → Admin → Recommendations. A user is "Ready" when
+   their profile is complete and they have a goal and a weekly workout capacity. Select
+   **one test user** → **Process selected**.
+5. **Verify:** the History table shows the attempt as Success with provider `anthropic`,
+   the model, tokens and estimated cost; AI usage shows the spend. The user sees the
+   recommendation on their Profile, in review for two days, and can accept it.
+6. **Then** use "Process all ready". Processing is manual and monthly (target: the 4th);
+   nothing runs automatically.
+
+What to expect:
+
+- **Budget reached:** processing stops, the page says "Monthly AI budget reached", and
+  the remaining users stay pending. Raise the budget (or wait for the next month) and
+  process again; users who already succeeded are not processed twice.
+- **A user fails** (provider error, invalid reply): only that user is marked Failed with
+  a reason; their previous recommendation stays active. Use "Retry failed".
+- **Turning it off:** delete the `ai_monthly_budget` row, or
+  `npx supabase secrets unset ANTHROPIC_API_KEY`.
+- **Local development and tests** never call a real AI: `AI_PROVIDER=mock` in
+  `supabase/functions/.env` selects the deterministic mock provider.
+
+### Recovery
+
+- **A bad frontend deployment:** Vercel → Deployments → the last good deployment →
+  "Promote to Production" (instant rollback). The service worker shows users "A new
+  version is available" and a reload picks it up. Fix forward in git afterwards.
+- **A bad migration:** migrations are forward-only. Never edit or delete an applied
+  migration and never reset the production database. Write a new migration that corrects
+  the problem, test it on the local stack (`npm run db:reset && npm run db:test`), then
+  `npx supabase db push`.
+- **Backups:** automatic backups depend on the Supabase plan (Dashboard → Database →
+  Backups; the free plan has none). Whatever the plan, take your own dump before a risky
+  change: `npx supabase db dump --linked -f backup.sql` (schema) and
+  `npx supabase db dump --linked --data-only -f data.sql` (data). Keep the files private:
+  they contain personal data.
+- **An Edge Function fails:** Dashboard → Edge Functions → the function → Logs shows the
+  error code. Common causes:
+  - `SERVER_ERROR` at once on every call: a secret is missing (`PIN_AUTH_SECRET`);
+  - sign-in fails only from the website: `ALLOWED_ORIGINS` does not match the site's
+    exact origin;
+  - `PROVIDER_NOT_CONFIGURED` / `BUDGET_NOT_CONFIGURED`: AI is not enabled (above).
+
+  To roll a function back, check out the last good commit and run
+  `npx supabase functions deploy <name>`.
+
+- **Nobody can sign in:** check the Supabase project is running (free projects pause when
+  idle), then `pin-login`'s logs and secrets. `PIN_AUTH_SECRET` must never change: a
+  different value invalidates every account until each PIN is reset.
+- **Is production healthy?** `npm run smoke:deployment` with a designated test account
+  (see the checklist). It is read-only.
+- **Releasing a change:** run the checklist below; push migrations before or together
+  with the frontend; deploy functions only when files under `supabase/functions/`, or
+  the modules they import from `src/` and `scripts/lib/`, changed.
+
 ## Error handling and logging
 
 - **Edge Functions** return error codes only (for example `INVALID_INPUT`,
@@ -278,6 +418,8 @@ production project by accident: check the project ref at each step.
     was typed, and can be retried;
   - an unreachable server is reported as a connection problem, whichever client
     (database, Storage or Edge Function) made the request;
+  - a save is always attempted, even when the browser reports it is offline, so it fails
+    at once with that message instead of waiting silently for the connection;
   - the error boundary logs only the error's class name;
   - no debug logging remains (only development-mode logging);
   - expected errors are handled in the UI and not logged.
@@ -320,37 +462,69 @@ production project by accident: check the project ref at each step.
 
 ## Verification status
 
-**Verified locally** (Docker Supabase stack, production build served with the
-`vercel.json` rules):
+What the MVP release is based on. The feature-by-feature status is in
+[`release.md`](./release.md).
 
-- all migrations applied to a fresh database;
-- pgTAP, integration and storage tests;
-- the Edge Function deploy bundles, run standalone;
-- the real-provider contract;
-- the PWA (installability, the worker, what it caches, updates, offline shell);
-- CSP and headers, and direct navigation on every route;
-- every browser suite against the production build.
+**Production** (Supabase project `eeltuzswkhsewtpepgsf`, Mumbai `ap-south-1`; Vercel
+production domain `https://trackfitbuddy.vercel.app`), checked read-only on 12 Oct 2026:
 
-**Verified against cloud infrastructure** (Supabase project `eeltuzswkhsewtpepgsf` in
-Mumbai, `ap-south-1`; Vercel production domain `https://trackfitbuddy.vercel.app`):
-
-- `db push`: the 16 migrations up to `20261007000100` applied to the fresh hosted database, the remote history
-  matches the repository, and `db lint --linked` reports no errors;
-- `supabase functions deploy` (Docker bundling) for all three functions, including the
-  two that import shared code from `src/` and `scripts/lib/`;
-- the hosted gateway: `verify_jwt` is off for `pin-login` and on for the other two, and
-  it adds no CORS headers of its own, so the functions' allow-list decides;
-- CORS: only the production origin is allowed, on all three functions;
+- all 18 migrations are applied and the remote history matches the repository,
+  including `20261011000100_inbody_orphan_cleanup` and
+  `20261011000200_stale_correction_conflict` (the version check raises `PT409`);
+- all three Edge Functions are active; `verify_jwt` is off for `pin-login` and on for
+  the other two; the hosted gateway adds no CORS headers of its own;
+- function secrets present: `PIN_AUTH_SECRET`, `ALLOWED_ORIGINS`. No provider key, and
+  `ai_monthly_budget` is not set: AI processing cannot start;
+- row-level security is enabled on all 27 tables; clients have no direct privileges on
+  `audit_logs`; every security-definer function has a fixed `search_path`;
+- the `inbody-reports` bucket is private, with its size limit, allowed file types and
+  three policies (read own, upload own, delete own unreferenced);
 - Auth settings: public sign-up refused, confirmation off, phone and anonymous sign-ins
   off, Site URL set;
-- anonymous access: no profile reads, no public access to the `inbody-reports` bucket;
-- the Vercel build: it passes the build guard and bundle scan with Vercel's
-  `VITE_VERCEL_*` system variables present, and none of them is in the published bundle;
 - the live site: every route (including nested ones) returns 200, a missing asset is a
-  404, the manifest and service worker are served, and the security headers and CSP are
-  present;
-- sign-in as the super admin, and `npm run smoke:deployment` with a designated test
-  account (run by the project owner; all checks passed).
+  404, the manifest, icons and service worker are served, and the security headers and
+  CSP are present;
+- every file the live site serves was downloaded and scanned: no secrets, server code,
+  source maps or environment files; configuration and source paths are not reachable;
+- data integrity: no duplicate attempts, cycles, snapshots or active step entries; no
+  future-dated or orphaned records; files and InBody reports match; no out-of-range
+  values. The audit rows without an actor are system actions (migration defaults and
+  the command-line creation of the first admin).
+
+`public.rls_auto_enable` on the hosted database is not from this repository: it is a
+Supabase platform helper (an event trigger that turns on row-level security for new
+tables). It cannot be called through the API.
+
+**Locally, on the same service versions as production** (PostgREST, Postgres, Auth and
+Storage versions are taken from the linked project), with the production build served
+under the `vercel.json` rules:
+
+- all migrations from an empty database, the database tests, and the integration tests
+  through the real API and Edge Functions;
+- the Edge Function deploy bundles, booted with no project source;
+- the real Claude provider's request and response handling against an imitation of the
+  Messages API, including "refuses to start with no key or budget" and "an exhausted
+  budget cannot be bypassed by calling the function directly". No paid request;
+- a browser audit at 390, 768, 820, 1024 and 1440 px: layout, accessibility, sheets and
+  dialogs, Progress loading, offline saves and page loads, a missing chunk after a
+  deployment, and logout;
+- a first-user simulation: admin-created account → onboarding → Home → food from the
+  catalogue → workout → activity → steps → weight → Progress → a group → logout.
+
+**Signed-in checks on the live site** need a designated test account; the PIN is given
+to the command, never stored in the repository:
+
+- `npm run smoke:deployment` (read-only): run by the project owner after the first
+  deployment; all checks passed. Run it again after every release.
+- A stale admin correction on production (two admins, one record) should answer at once
+  with "This record changed since you opened it".
+
+**Not verified:**
+
+- a live Claude request (not configured, on purpose);
+- installing the PWA on a physical phone;
+- browsers other than current Chromium;
+- deploying functions with `--use-api`.
 
 Hosting notes:
 
@@ -358,45 +532,13 @@ Hosting notes:
   (`<project>-<hash>-<team>.vercel.app`) change on every deploy and sit behind Vercel's
   Deployment Protection, so they must not be used for `ALLOWED_ORIGINS` or the Site URL.
 - A Supabase project's region cannot be changed. Moving region means a new project and
-  repeating the steps above (which is how this project moved from Tokyo to Mumbai before
-  any real data existed).
+  repeating the setup steps.
 - Once the CLI is linked to the project, `supabase start` runs the local stack with the
-  **same service versions as production** (PostgREST, Postgres, Auth, Storage). Run the
-  database and integration suites on a linked checkout before a release: version
-  differences are real (the stale-correction hang above only appears on production's
-  PostgREST version). After adding a file in a new directory to an Edge Function's
-  imports, restart the local stack so the runtime can see it.
+  **same service versions as production**. Run the database and integration suites on a
+  linked checkout before a release: version differences are real (a stale admin
+  correction once hung only on production's PostgREST version). After adding a file in
+  a new directory to an Edge Function's imports, restart the local stack so the runtime
+  can see it.
 - The CLI can act for one account without changing a stored login: set
   `SUPABASE_ACCESS_TOKEN` for the command. Keep the token in a git-ignored file, and
   revoke it when it is no longer needed.
-
-**Production hardening release** (reliability and UX fixes; see the commit "harden
-production reliability and UX"). Verified locally on the production build at 390, 768,
-820, 1024 and 1440 px:
-
-- Progress range switching, loading and error states;
-- sheets and dialogs (fit, focus trap, Escape, no loss of input on a backdrop tap);
-- accessibility probes on every page;
-- offline saves and page loads, a missing chunk after a deployment, and logout.
-
-The release adds two migrations, which must be pushed to the production database
-(checklist above):
-
-- `20261011000100_inbody_orphan_cleanup.sql`: until it is pushed, a refused InBody upload
-  is still rejected up front by validation, but a file whose record fails for another
-  reason is not removed.
-- `20261011000200_stale_correction_conflict.sql`: **a production bug fix.** Until it is
-  pushed, a stale admin correction (two admins correcting the same record) hangs
-  instead of reporting the conflict, because production's PostgREST version retries the
-  old error code.
-
-**Still not verified:**
-
-- a live Claude request: `ANTHROPIC_API_KEY` is not set and `ai_monthly_budget` is null,
-  so AI processing is off. To enable it, set the key and a budget, then process one
-  designated test user;
-- installing the PWA on a physical phone;
-- the browser walkthrough of every feature on the live site (After deployment, second
-  item). The automated browser audit runs against the production build with the local
-  database, not against the live site;
-- deploying functions with `--use-api`.

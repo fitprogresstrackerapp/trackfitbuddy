@@ -1,0 +1,965 @@
+{
+  "_about": "Starter food catalogue for TrackFitBuddy (spec section 11). Values are APPROXIMATE per-serving figures for common preparations; real food varies with recipe and portion. Every item is stored with is_approximate = true and shown as approximate in the app. Review before loading into production: npm run foods:seed -- --dry-run. Serving sizes: bowl ~200-250 g, plate ~300 g, glass ~250 ml, cup ~150 ml, katori ~100 g.",
+  "foods": [
+    {
+      "name": "Rice, white (cooked)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 130,
+      "protein_g": 2.7,
+      "carbs_g": 28.2,
+      "fat_g": 0.3,
+      "fiber_g": 0.4
+    },
+    {
+      "name": "Rice, brown (cooked)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 112,
+      "protein_g": 2.3,
+      "carbs_g": 23.5,
+      "fat_g": 0.8,
+      "fiber_g": 1.8
+    },
+    {
+      "name": "Chapati / phulka (no ghee)",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 85,
+      "protein_g": 3,
+      "carbs_g": 17,
+      "fat_g": 0.6,
+      "fiber_g": 2.7
+    },
+    {
+      "name": "Paratha, plain",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 180,
+      "protein_g": 4,
+      "carbs_g": 26,
+      "fat_g": 7,
+      "fiber_g": 3
+    },
+    {
+      "name": "Aloo paratha",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 240,
+      "protein_g": 5.5,
+      "carbs_g": 34,
+      "fat_g": 9,
+      "fiber_g": 3.5
+    },
+    {
+      "name": "Jowar roti",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 100,
+      "protein_g": 3,
+      "carbs_g": 21,
+      "fat_g": 1,
+      "fiber_g": 2.8
+    },
+    {
+      "name": "Naan",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 260,
+      "protein_g": 8.5,
+      "carbs_g": 45,
+      "fat_g": 5,
+      "fiber_g": 2
+    },
+    {
+      "name": "Puri",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 85,
+      "protein_g": 1.5,
+      "carbs_g": 9.5,
+      "fat_g": 4.5,
+      "fiber_g": 0.8
+    },
+    {
+      "name": "Bread, white",
+      "serving_quantity": 1,
+      "serving_unit": "slice",
+      "calories": 70,
+      "protein_g": 2.3,
+      "carbs_g": 13,
+      "fat_g": 0.9,
+      "fiber_g": 0.7
+    },
+    {
+      "name": "Bread, whole wheat",
+      "serving_quantity": 1,
+      "serving_unit": "slice",
+      "calories": 70,
+      "protein_g": 3.5,
+      "carbs_g": 12,
+      "fat_g": 1,
+      "fiber_g": 2
+    },
+    {
+      "name": "Oats (dry)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 389,
+      "protein_g": 16.9,
+      "carbs_g": 66.3,
+      "fat_g": 6.9,
+      "fiber_g": 10.6
+    },
+    {
+      "name": "Idli",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 45,
+      "protein_g": 1.6,
+      "carbs_g": 8.9,
+      "fat_g": 0.2,
+      "fiber_g": 0.6
+    },
+    {
+      "name": "Dosa, plain",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 135,
+      "protein_g": 3.2,
+      "carbs_g": 23,
+      "fat_g": 3.2,
+      "fiber_g": 1.2
+    },
+    {
+      "name": "Masala dosa",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 300,
+      "protein_g": 6,
+      "carbs_g": 42,
+      "fat_g": 11,
+      "fiber_g": 3
+    },
+    {
+      "name": "Pesarattu",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 150,
+      "protein_g": 7,
+      "carbs_g": 22,
+      "fat_g": 3.5,
+      "fiber_g": 4
+    },
+    {
+      "name": "Medu vada",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 130,
+      "protein_g": 4,
+      "carbs_g": 12,
+      "fat_g": 7.5,
+      "fiber_g": 1.8
+    },
+    {
+      "name": "Upma",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 250,
+      "protein_g": 6,
+      "carbs_g": 38,
+      "fat_g": 8,
+      "fiber_g": 3.5
+    },
+    {
+      "name": "Poha",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 250,
+      "protein_g": 5,
+      "carbs_g": 44,
+      "fat_g": 6,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Sambar",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 130,
+      "protein_g": 6,
+      "carbs_g": 19,
+      "fat_g": 3.5,
+      "fiber_g": 5
+    },
+    {
+      "name": "Coconut chutney",
+      "serving_quantity": 1,
+      "serving_unit": "tbsp",
+      "calories": 25,
+      "protein_g": 0.4,
+      "carbs_g": 1.3,
+      "fat_g": 2.2,
+      "fiber_g": 0.8
+    },
+    {
+      "name": "Chicken biryani (Hyderabadi)",
+      "serving_quantity": 1,
+      "serving_unit": "plate",
+      "calories": 480,
+      "protein_g": 24,
+      "carbs_g": 55,
+      "fat_g": 17,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Mutton biryani",
+      "serving_quantity": 1,
+      "serving_unit": "plate",
+      "calories": 540,
+      "protein_g": 26,
+      "carbs_g": 55,
+      "fat_g": 23,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Veg biryani",
+      "serving_quantity": 1,
+      "serving_unit": "plate",
+      "calories": 400,
+      "protein_g": 9,
+      "carbs_g": 62,
+      "fat_g": 13,
+      "fiber_g": 5
+    },
+    {
+      "name": "Veg pulao",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 260,
+      "protein_g": 5,
+      "carbs_g": 42,
+      "fat_g": 8,
+      "fiber_g": 3
+    },
+    {
+      "name": "Curd rice",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 275,
+      "protein_g": 7,
+      "carbs_g": 42,
+      "fat_g": 8,
+      "fiber_g": 1
+    },
+    {
+      "name": "Khichdi",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 300,
+      "protein_g": 10,
+      "carbs_g": 48,
+      "fat_g": 7,
+      "fiber_g": 5
+    },
+    {
+      "name": "Toor dal (cooked)",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 210,
+      "protein_g": 11,
+      "carbs_g": 28,
+      "fat_g": 6,
+      "fiber_g": 7
+    },
+    {
+      "name": "Moong dal (cooked)",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 190,
+      "protein_g": 12,
+      "carbs_g": 28,
+      "fat_g": 3.5,
+      "fiber_g": 7
+    },
+    {
+      "name": "Rajma curry",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 240,
+      "protein_g": 11,
+      "carbs_g": 32,
+      "fat_g": 7,
+      "fiber_g": 9
+    },
+    {
+      "name": "Chole / chana masala",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 280,
+      "protein_g": 12,
+      "carbs_g": 36,
+      "fat_g": 10,
+      "fiber_g": 10
+    },
+    {
+      "name": "Chickpeas (boiled)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 164,
+      "protein_g": 8.9,
+      "carbs_g": 27.4,
+      "fat_g": 2.6,
+      "fiber_g": 7.6
+    },
+    {
+      "name": "Moong sprouts",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 30,
+      "protein_g": 3,
+      "carbs_g": 5.9,
+      "fat_g": 0.2,
+      "fiber_g": 1.8
+    },
+    {
+      "name": "Soya chunks (dry)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 345,
+      "protein_g": 52,
+      "carbs_g": 33,
+      "fat_g": 0.5,
+      "fiber_g": 13
+    },
+    {
+      "name": "Chicken breast (cooked)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 165,
+      "protein_g": 31,
+      "carbs_g": 0,
+      "fat_g": 3.6,
+      "fiber_g": 0
+    },
+    {
+      "name": "Chicken thigh (cooked)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 209,
+      "protein_g": 26,
+      "carbs_g": 0,
+      "fat_g": 10.9,
+      "fiber_g": 0
+    },
+    {
+      "name": "Chicken curry",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 300,
+      "protein_g": 25,
+      "carbs_g": 8,
+      "fat_g": 18,
+      "fiber_g": 2
+    },
+    {
+      "name": "Tandoori chicken",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 165,
+      "protein_g": 25,
+      "carbs_g": 3,
+      "fat_g": 6,
+      "fiber_g": 0.5
+    },
+    {
+      "name": "Chicken 65",
+      "serving_quantity": 1,
+      "serving_unit": "plate",
+      "calories": 330,
+      "protein_g": 28,
+      "carbs_g": 12,
+      "fat_g": 19,
+      "fiber_g": 1
+    },
+    {
+      "name": "Egg, boiled",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 78,
+      "protein_g": 6.3,
+      "carbs_g": 0.6,
+      "fat_g": 5.3,
+      "fiber_g": 0
+    },
+    {
+      "name": "Egg white",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 17,
+      "protein_g": 3.6,
+      "carbs_g": 0.2,
+      "fat_g": 0.1,
+      "fiber_g": 0
+    },
+    {
+      "name": "Omelette (2 eggs)",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 190,
+      "protein_g": 13,
+      "carbs_g": 1.5,
+      "fat_g": 15,
+      "fiber_g": 0
+    },
+    {
+      "name": "Egg curry (2 eggs)",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 260,
+      "protein_g": 14,
+      "carbs_g": 8,
+      "fat_g": 19,
+      "fiber_g": 2
+    },
+    {
+      "name": "Fish (grilled)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 140,
+      "protein_g": 24,
+      "carbs_g": 0,
+      "fat_g": 4.5,
+      "fiber_g": 0
+    },
+    {
+      "name": "Fish curry",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 240,
+      "protein_g": 22,
+      "carbs_g": 8,
+      "fat_g": 13,
+      "fiber_g": 1.5
+    },
+    {
+      "name": "Prawns (cooked)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 99,
+      "protein_g": 24,
+      "carbs_g": 0.2,
+      "fat_g": 0.3,
+      "fiber_g": 0
+    },
+    {
+      "name": "Mutton curry",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 360,
+      "protein_g": 26,
+      "carbs_g": 8,
+      "fat_g": 25,
+      "fiber_g": 1.5
+    },
+    {
+      "name": "Haleem",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 390,
+      "protein_g": 26,
+      "carbs_g": 28,
+      "fat_g": 19,
+      "fiber_g": 5
+    },
+    {
+      "name": "Paneer",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 265,
+      "protein_g": 18.3,
+      "carbs_g": 1.2,
+      "fat_g": 20.8,
+      "fiber_g": 0
+    },
+    {
+      "name": "Paneer butter masala",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 380,
+      "protein_g": 14,
+      "carbs_g": 14,
+      "fat_g": 30,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Palak paneer",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 300,
+      "protein_g": 14,
+      "carbs_g": 12,
+      "fat_g": 22,
+      "fiber_g": 4
+    },
+    {
+      "name": "Tofu",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 76,
+      "protein_g": 8,
+      "carbs_g": 1.9,
+      "fat_g": 4.8,
+      "fiber_g": 0.3
+    },
+    {
+      "name": "Whey protein",
+      "serving_quantity": 1,
+      "serving_unit": "scoop",
+      "calories": 120,
+      "protein_g": 24,
+      "carbs_g": 3,
+      "fat_g": 1.5,
+      "fiber_g": 0
+    },
+    {
+      "name": "Milk (toned)",
+      "serving_quantity": 1,
+      "serving_unit": "glass",
+      "calories": 145,
+      "protein_g": 7.8,
+      "carbs_g": 11.8,
+      "fat_g": 7.5,
+      "fiber_g": 0
+    },
+    {
+      "name": "Curd / dahi",
+      "serving_quantity": 1,
+      "serving_unit": "katori",
+      "calories": 60,
+      "protein_g": 3.1,
+      "carbs_g": 4.7,
+      "fat_g": 3.3,
+      "fiber_g": 0
+    },
+    {
+      "name": "Buttermilk / chaas",
+      "serving_quantity": 1,
+      "serving_unit": "glass",
+      "calories": 45,
+      "protein_g": 2.5,
+      "carbs_g": 4,
+      "fat_g": 1.5,
+      "fiber_g": 0
+    },
+    {
+      "name": "Lassi (sweet)",
+      "serving_quantity": 1,
+      "serving_unit": "glass",
+      "calories": 180,
+      "protein_g": 6,
+      "carbs_g": 28,
+      "fat_g": 5,
+      "fiber_g": 0
+    },
+    {
+      "name": "Mixed vegetable curry",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 160,
+      "protein_g": 4,
+      "carbs_g": 16,
+      "fat_g": 9,
+      "fiber_g": 5
+    },
+    {
+      "name": "Aloo sabzi",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 200,
+      "protein_g": 3.5,
+      "carbs_g": 28,
+      "fat_g": 8.5,
+      "fiber_g": 3.5
+    },
+    {
+      "name": "Bhindi fry",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 150,
+      "protein_g": 3,
+      "carbs_g": 12,
+      "fat_g": 10,
+      "fiber_g": 5
+    },
+    {
+      "name": "Salad (cucumber, tomato, onion)",
+      "serving_quantity": 1,
+      "serving_unit": "bowl",
+      "calories": 35,
+      "protein_g": 1.5,
+      "carbs_g": 7,
+      "fat_g": 0.3,
+      "fiber_g": 2
+    },
+    {
+      "name": "Potato (boiled)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 87,
+      "protein_g": 1.9,
+      "carbs_g": 20.1,
+      "fat_g": 0.1,
+      "fiber_g": 1.8
+    },
+    {
+      "name": "Sweet potato (boiled)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 76,
+      "protein_g": 1.4,
+      "carbs_g": 17.7,
+      "fat_g": 0.1,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Banana",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 105,
+      "protein_g": 1.3,
+      "carbs_g": 27,
+      "fat_g": 0.4,
+      "fiber_g": 3.1
+    },
+    {
+      "name": "Apple",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 95,
+      "protein_g": 0.5,
+      "carbs_g": 25,
+      "fat_g": 0.3,
+      "fiber_g": 4.4
+    },
+    {
+      "name": "Orange",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 62,
+      "protein_g": 1.2,
+      "carbs_g": 15.4,
+      "fat_g": 0.2,
+      "fiber_g": 3.1
+    },
+    {
+      "name": "Mango",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 60,
+      "protein_g": 0.8,
+      "carbs_g": 15,
+      "fat_g": 0.4,
+      "fiber_g": 1.6
+    },
+    {
+      "name": "Papaya",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 43,
+      "protein_g": 0.5,
+      "carbs_g": 10.8,
+      "fat_g": 0.3,
+      "fiber_g": 1.7
+    },
+    {
+      "name": "Watermelon",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 30,
+      "protein_g": 0.6,
+      "carbs_g": 7.6,
+      "fat_g": 0.2,
+      "fiber_g": 0.4
+    },
+    {
+      "name": "Guava",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 68,
+      "protein_g": 2.6,
+      "carbs_g": 14.3,
+      "fat_g": 1,
+      "fiber_g": 5.4
+    },
+    {
+      "name": "Pomegranate",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 83,
+      "protein_g": 1.7,
+      "carbs_g": 18.7,
+      "fat_g": 1.2,
+      "fiber_g": 4
+    },
+    {
+      "name": "Dates",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 282,
+      "protein_g": 2.5,
+      "carbs_g": 75,
+      "fat_g": 0.4,
+      "fiber_g": 8
+    },
+    {
+      "name": "Almonds",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 579,
+      "protein_g": 21.2,
+      "carbs_g": 21.6,
+      "fat_g": 49.9,
+      "fiber_g": 12.5
+    },
+    {
+      "name": "Cashews",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 553,
+      "protein_g": 18.2,
+      "carbs_g": 30.2,
+      "fat_g": 43.8,
+      "fiber_g": 3.3
+    },
+    {
+      "name": "Peanuts (roasted)",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 585,
+      "protein_g": 24,
+      "carbs_g": 21,
+      "fat_g": 50,
+      "fiber_g": 8
+    },
+    {
+      "name": "Peanut butter",
+      "serving_quantity": 1,
+      "serving_unit": "tbsp",
+      "calories": 94,
+      "protein_g": 4,
+      "carbs_g": 3.5,
+      "fat_g": 8,
+      "fiber_g": 1
+    },
+    {
+      "name": "Ghee",
+      "serving_quantity": 1,
+      "serving_unit": "tsp",
+      "calories": 45,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 5,
+      "fiber_g": 0
+    },
+    {
+      "name": "Cooking oil",
+      "serving_quantity": 1,
+      "serving_unit": "tsp",
+      "calories": 45,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 5,
+      "fiber_g": 0
+    },
+    {
+      "name": "Butter",
+      "serving_quantity": 1,
+      "serving_unit": "tsp",
+      "calories": 36,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 4.1,
+      "fiber_g": 0
+    },
+    {
+      "name": "Sugar",
+      "serving_quantity": 1,
+      "serving_unit": "tsp",
+      "calories": 16,
+      "protein_g": 0,
+      "carbs_g": 4.2,
+      "fat_g": 0,
+      "fiber_g": 0
+    },
+    {
+      "name": "Samosa",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 250,
+      "protein_g": 4,
+      "carbs_g": 28,
+      "fat_g": 14,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Mirchi bajji",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 120,
+      "protein_g": 2.5,
+      "carbs_g": 12,
+      "fat_g": 7,
+      "fiber_g": 1.5
+    },
+    {
+      "name": "Pani puri",
+      "serving_quantity": 1,
+      "serving_unit": "plate",
+      "calories": 180,
+      "protein_g": 3.5,
+      "carbs_g": 30,
+      "fat_g": 5,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Vada pav",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 290,
+      "protein_g": 6,
+      "carbs_g": 40,
+      "fat_g": 12,
+      "fiber_g": 3
+    },
+    {
+      "name": "Pav bhaji",
+      "serving_quantity": 1,
+      "serving_unit": "plate",
+      "calories": 400,
+      "protein_g": 9,
+      "carbs_g": 55,
+      "fat_g": 16,
+      "fiber_g": 6
+    },
+    {
+      "name": "Instant noodles",
+      "serving_quantity": 1,
+      "serving_unit": "pack",
+      "calories": 310,
+      "protein_g": 7,
+      "carbs_g": 44,
+      "fat_g": 12,
+      "fiber_g": 2
+    },
+    {
+      "name": "Chicken shawarma roll",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 390,
+      "protein_g": 24,
+      "carbs_g": 36,
+      "fat_g": 16,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Pizza (cheese)",
+      "serving_quantity": 1,
+      "serving_unit": "slice",
+      "calories": 285,
+      "protein_g": 12,
+      "carbs_g": 36,
+      "fat_g": 10,
+      "fiber_g": 2.5
+    },
+    {
+      "name": "Chicken burger",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 380,
+      "protein_g": 18,
+      "carbs_g": 36,
+      "fat_g": 18,
+      "fiber_g": 2
+    },
+    {
+      "name": "French fries",
+      "serving_quantity": 100,
+      "serving_unit": "g",
+      "calories": 312,
+      "protein_g": 3.4,
+      "carbs_g": 41,
+      "fat_g": 15,
+      "fiber_g": 3.8
+    },
+    {
+      "name": "Gulab jamun",
+      "serving_quantity": 1,
+      "serving_unit": "piece",
+      "calories": 150,
+      "protein_g": 2,
+      "carbs_g": 22,
+      "fat_g": 6,
+      "fiber_g": 0.3
+    },
+    {
+      "name": "Ice cream",
+      "serving_quantity": 1,
+      "serving_unit": "scoop",
+      "calories": 137,
+      "protein_g": 2.3,
+      "carbs_g": 16,
+      "fat_g": 7.3,
+      "fiber_g": 0.5
+    },
+    {
+      "name": "Tea with milk and sugar",
+      "serving_quantity": 1,
+      "serving_unit": "cup",
+      "calories": 55,
+      "protein_g": 1.5,
+      "carbs_g": 8.5,
+      "fat_g": 1.7,
+      "fiber_g": 0
+    },
+    {
+      "name": "Coffee with milk and sugar",
+      "serving_quantity": 1,
+      "serving_unit": "cup",
+      "calories": 70,
+      "protein_g": 2,
+      "carbs_g": 10,
+      "fat_g": 2.3,
+      "fiber_g": 0
+    },
+    {
+      "name": "Black coffee",
+      "serving_quantity": 1,
+      "serving_unit": "cup",
+      "calories": 2,
+      "protein_g": 0.3,
+      "carbs_g": 0,
+      "fat_g": 0,
+      "fiber_g": 0
+    },
+    {
+      "name": "Coconut water",
+      "serving_quantity": 1,
+      "serving_unit": "glass",
+      "calories": 48,
+      "protein_g": 1.8,
+      "carbs_g": 9.3,
+      "fat_g": 0.5,
+      "fiber_g": 2.7
+    },
+    {
+      "name": "Soft drink (cola)",
+      "serving_quantity": 1,
+      "serving_unit": "glass",
+      "calories": 105,
+      "protein_g": 0,
+      "carbs_g": 26.5,
+      "fat_g": 0,
+      "fiber_g": 0
+    }
+  ]
+}

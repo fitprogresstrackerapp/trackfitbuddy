@@ -72,6 +72,7 @@ at startup.
 | `npm run functions:check`  | `deno check` + `deno lint` for functions        |
 | `npm run functions:bundle` | Bundle each function for deploy, run standalone |
 | `npm run user:create`      | Create an account / reset a PIN (service role)  |
+| `npm run foods:seed`       | Load the starter food catalogue (service role)  |
 | `npm run db:start`         | Start local Postgres only (needs Docker)        |
 | `npm run db:reset`         | Recreate DB from migrations                     |
 | `npm run db:test`          | Run database / RLS tests (pgTAP)                |
@@ -119,6 +120,11 @@ Groups, roles, join codes, the shared-progress privacy boundary and history rule
 
 User management, manager scope, data corrections, activation, PIN reset and audit:
 [`docs/admin.md`](./docs/admin.md).
+
+## Release status
+
+What the MVP includes, what is switched off, and its known limitations:
+[`docs/release.md`](./docs/release.md).
 
 ## Deployment
 
