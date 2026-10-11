@@ -5,6 +5,7 @@ import { formatNumber } from '@/lib/format'
 
 import type { OverviewUser, ProcessingState } from '../api/admin-data'
 import type { HistoryItem, MonthlyFeedback } from '../api/recommendation-data'
+import { isNetworkError, NETWORK_ERROR_MESSAGE } from '@/lib/errors/network-error'
 
 /*
  * Pure display rules for recommendation screens (admin processing and the
@@ -121,8 +122,7 @@ const FEEDBACK_ERRORS: readonly [RegExp, string][] = [
 ]
 
 export function friendlyFeedbackError(error: unknown): string {
-  if (error instanceof TypeError)
-    return 'Couldn’t reach the server. Check your connection and try again.'
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE
   const message =
     error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
       ? error.message

@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  keepOpenOnOutsideInteraction,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 
@@ -34,7 +35,7 @@ export function EditQuantityDialog({ item, onOpenChange, onSave }: EditQuantityD
   return (
     <Dialog open={item !== null} onOpenChange={onOpenChange}>
       {item && (
-        <DialogContent>
+        <DialogContent onInteractOutside={keepOpenOnOutsideInteraction}>
           <EditQuantityForm key={item.id} item={item} onSave={onSave} />
         </DialogContent>
       )}

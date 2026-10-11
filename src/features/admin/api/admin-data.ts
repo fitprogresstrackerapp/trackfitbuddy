@@ -2,6 +2,7 @@ import { FunctionsHttpError, type PostgrestError } from '@supabase/supabase-js'
 
 import type { AppSupabaseClient } from '@/lib/supabase/client'
 import type { Database, Json } from '@/types/database'
+import { isNetworkError } from '@/lib/errors/network-error'
 
 /*
  * Admin management data (spec §5–7, §63, §69, §78–79). Every call is a
@@ -691,6 +692,8 @@ async function invokeAdminUsers<T>(supabase: AppSupabaseClient, body: object): P
       } catch {
         // keep the generic code
       }
+    } else if (isNetworkError(error)) {
+      code = 'NETWORK'
     }
     throw new AdminActionError(code)
   }

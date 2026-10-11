@@ -1,4 +1,5 @@
 import type { StepEntry } from '../api/profile-data'
+import { isNetworkError, NETWORK_ERROR_MESSAGE } from '@/lib/errors/network-error'
 
 /*
  * Pure Profile rules. The database is authoritative for readiness, locking
@@ -94,12 +95,7 @@ const KNOWN_ERRORS: readonly [RegExp, string][] = [
  * `fallback`, which names the action.
  */
 export function friendlyProfileError(error: unknown, fallback: string): string {
-  if (
-    error instanceof TypeError ||
-    (error instanceof Error && /fetch|network/i.test(error.message))
-  ) {
-    return 'Couldn’t reach the server. Check your connection and try again.'
-  }
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE
   if (error && typeof error === 'object') {
     const { code, message } = error as { code?: unknown; message?: unknown }
     if (typeof message === 'string') {

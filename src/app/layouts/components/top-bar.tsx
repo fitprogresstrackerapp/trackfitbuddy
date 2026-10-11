@@ -35,7 +35,8 @@ export function TopBar({ items, tag, brandClassName = 'md:hidden', className }: 
           to={ROUTES.home}
           aria-label="Home"
           className={cn(
-            'rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            // 32px target around the 20px mark; the negative margin keeps it aligned.
+            '-m-1.5 flex size-8 items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
             brandClassName,
           )}
         >

@@ -15,7 +15,7 @@ function Checkbox({ className, ...props }: ComponentProps<typeof CheckboxPrimiti
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        'peer size-4.5 shrink-0 cursor-pointer rounded-xs border border-foreground-secondary/50 bg-surface-1 transition-colors disabled:cursor-not-allowed disabled:opacity-45 aria-invalid:border-destructive data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
+        'peer relative size-4.5 shrink-0 cursor-pointer rounded-xs border border-foreground-secondary/50 bg-surface-1 transition-colors after:absolute after:-inset-1.5 after:content-[""] disabled:cursor-not-allowed disabled:opacity-45 aria-invalid:border-destructive data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
         focusRing,
         className,
       )}
@@ -43,7 +43,7 @@ function RadioGroupItem({ className, ...props }: ComponentProps<typeof RadioGrou
     <RadioGroupPrimitive.Item
       data-slot="radio-item"
       className={cn(
-        'peer flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-foreground-secondary/50 bg-surface-1 transition-colors disabled:cursor-not-allowed disabled:opacity-45 data-[state=checked]:border-primary',
+        'peer relative flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-foreground-secondary/50 bg-surface-1 transition-colors after:absolute after:-inset-1.5 after:content-[""] disabled:cursor-not-allowed disabled:opacity-45 data-[state=checked]:border-primary',
         focusRing,
         className,
       )}

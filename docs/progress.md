@@ -15,6 +15,11 @@ and the page is loaded lazily because it carries the charting library.
   unknown value falls back to 30D.
 - **Independent sections:** each section loads, fails (with a retry) and skeletons on its
   own. A failure is never shown as zeros.
+- **Switching range:** a range that isn't cached yet is shown as loading: each range
+  section shows its skeleton (sized close to the loaded section, so the page doesn't
+  jump), and the change is announced to screen readers. The previous range's numbers are
+  never shown under the new range's label. A range already seen appears at once. A
+  failed range shows that section's error with Retry.
 
 ## Ranges
 

@@ -181,7 +181,16 @@ export function AdminAuditPage() {
         </div>
       </Section>
 
-      <Section title="Entries" meta={audit.data ? `${String(audit.data.total)} found` : undefined}>
+      <Section
+        title="Entries"
+        meta={
+          audit.isPlaceholderData
+            ? 'Updating…'
+            : audit.data
+              ? `${String(audit.data.total)} found`
+              : undefined
+        }
+      >
         {audit.isError ? (
           <SectionError title="Audit unavailable" onRetry={() => void audit.refetch()} />
         ) : audit.isPending ? (
@@ -193,7 +202,10 @@ export function AdminAuditPage() {
             description="Try a wider date range or fewer filters."
           />
         ) : (
-          <>
+          <div
+            aria-busy={audit.isPlaceholderData || undefined}
+            className="flex flex-col gap-5 transition-opacity aria-busy:opacity-60"
+          >
             <ul className="divide-y divide-border border-y border-border">
               {audit.data.rows.map((entry) => (
                 <li key={entry.id}>
@@ -226,7 +238,7 @@ export function AdminAuditPage() {
               total={audit.data.total}
               onPage={setPage}
             />
-          </>
+          </div>
         )}
       </Section>
 

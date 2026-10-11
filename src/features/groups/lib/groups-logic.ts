@@ -1,6 +1,7 @@
 import { ROUTES } from '@/constants/routes'
 
 import type { GroupRole, MemberDay } from '../api/groups-data'
+import { isNetworkError, NETWORK_ERROR_MESSAGE } from '@/lib/errors/network-error'
 
 /*
  * Pure Groups rules (spec §46–48). Informational only: nothing here ranks,
@@ -111,8 +112,7 @@ const KNOWN_ERRORS: readonly [RegExp, string][] = [
 
 /** User-facing text; never raw database messages. */
 export function friendlyGroupError(error: unknown, fallback: string): string {
-  if (error instanceof TypeError)
-    return 'Couldn’t reach the server. Check your connection and try again.'
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE
   const message =
     error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
       ? error.message

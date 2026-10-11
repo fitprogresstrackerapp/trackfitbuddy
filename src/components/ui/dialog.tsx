@@ -101,6 +101,15 @@ interface SheetContentProps extends ComponentProps<typeof DialogPrimitive.Conten
   side?: 'bottom' | 'right' | 'responsive'
 }
 
+/**
+ * Keeps a dialog open when the user taps or clicks outside it. Used wherever a
+ * form lives (every Sheet; dialogs with inputs): a stray tap on the backdrop
+ * must not silently discard typed input. Close, Cancel and Escape still close.
+ */
+export function keepOpenOnOutsideInteraction(event: Event) {
+  event.preventDefault()
+}
+
 const sheetSides = {
   bottom:
     'inset-x-0 bottom-0 max-h-[88dvh] rounded-t-md border-t pb-[max(env(safe-area-inset-bottom),1.25rem)] data-[state=closed]:animate-sheet-out-bottom data-[state=open]:animate-sheet-in-bottom',
@@ -121,6 +130,7 @@ function SheetContent({ className, children, side = 'responsive', ...props }: Sh
           sheetSides[side],
           className,
         )}
+        onInteractOutside={keepOpenOnOutsideInteraction}
         {...props}
       >
         {side !== 'right' && (

@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { TrendChart } from '@/components/charts/trend-chart'
 import { SectionError } from '@/components/common/section-error'
 import { Section } from '@/components/layout/page'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ICONS } from '@/constants/icons'
 import { formatDuration } from '@/features/training/lib/training'
 import { formatNumber, NO_VALUE } from '@/lib/format'
@@ -201,6 +202,9 @@ interface ActivityProgressProps {
  * Activities and steps (spec §18–19): tracked for trends only. No frequency
  * or step goal exists in Phase 1, so nothing is ever met or missed.
  */
+// Activity shows its figures, a weekly chart and the steps block.
+const ACTIVITY_SKELETON = ['h-40'] as const
+
 export function ActivityProgress({ query, steps, period }: ActivityProgressProps) {
   const derived = useMemo(() => {
     if (!query.data) return null
@@ -216,7 +220,7 @@ export function ActivityProgress({ query, steps, period }: ActivityProgressProps
       {query.isError ? (
         <SectionError title="Activity data unavailable" onRetry={() => void query.refetch()} />
       ) : !derived ? (
-        <SectionSkeleton chart={false} />
+        <SectionSkeleton blocks={ACTIVITY_SKELETON} />
       ) : (
         <div className="flex flex-col gap-6">
           {derived.totals ? (
@@ -261,7 +265,9 @@ export function ActivityProgress({ query, steps, period }: ActivityProgressProps
             <SubHeading>Steps</SubHeading>
             {steps.isError ? (
               <SectionError title="Steps unavailable" onRetry={() => void steps.refetch()} />
-            ) : !steps.data ? null : stepStats ? (
+            ) : !steps.data ? (
+              <Skeleton className="h-10 w-full" aria-hidden="true" />
+            ) : stepStats ? (
               <>
                 <p className="text-sm text-foreground-secondary">
                   <span className="metric text-xl text-foreground">

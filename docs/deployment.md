@@ -23,16 +23,21 @@ Browser ──▶ Vercel (static React/Vite build, vercel.json rules)
 
 ## Configuration and secrets
 
-| Variable                            | Where                                                                      | Browser-safe | Purpose                                               |
-| ----------------------------------- | -------------------------------------------------------------------------- | ------------ | ----------------------------------------------------- |
-| `VITE_SUPABASE_URL`                 | Vercel (build env), `.env` locally                                         | yes          | Supabase project URL                                  |
-| `VITE_SUPABASE_ANON_KEY`            | Vercel (build env), `.env` locally                                         | yes          | anon / publishable key (RLS protects the data)        |
-| `PIN_AUTH_SECRET`                   | Supabase function secret                                                   | **no**       | derives each account's Auth password (≥ 32 chars)     |
-| `ALLOWED_ORIGINS`                   | Supabase function secret                                                   | not secret   | comma-separated app origins allowed by CORS           |
-| `ANTHROPIC_API_KEY`                 | Supabase function secret                                                   | **no**       | Claude API key (process-recommendations only)         |
-| `AI_PROVIDER` / `AI_MODEL`          | function env, **local/tests only**                                         | not secret   | forces a provider (`mock`); leave unset in production |
-| `SUPABASE_SERVICE_ROLE_KEY`         | provided to functions by Supabase; trusted admin machine for `user:create` | **no**       | service role                                          |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | provided to functions by Supabase                                          | yes          | —                                                     |
+| Variable                            | Where                                                                       | Browser-safe | Purpose                                                          |
+| ----------------------------------- | --------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`                 | Vercel (build env), `.env` locally                                          | yes          | Supabase project URL                                             |
+| `VITE_SUPABASE_ANON_KEY`            | Vercel (build env), `.env` locally                                          | yes          | anon / publishable key (RLS protects the data)                   |
+| `PIN_AUTH_SECRET`                   | Supabase function secret                                                    | **no**       | derives each account's Auth password (≥ 32 chars)                |
+| `ALLOWED_ORIGINS`                   | Supabase function secret                                                    | not secret   | comma-separated app origins allowed by CORS                      |
+| `ANTHROPIC_API_KEY`                 | Supabase function secret                                                    | **no**       | Claude API key (process-recommendations only)                    |
+| `AI_PROVIDER` / `AI_MODEL`          | function env, **local/tests only**                                          | not secret   | forces a provider (`mock`); leave unset in production            |
+| `SUPABASE_SERVICE_ROLE_KEY`         | provided to functions by Supabase; trusted admin machine for `user:create`  | **no**       | service role                                                     |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | provided to functions by Supabase                                           | yes          | —                                                                |
+| `SUPABASE_ACCESS_TOKEN`             | operator's machine only (git-ignored `.env.supabase`), for the Supabase CLI | **no**       | deploys migrations, functions and secrets; never used by the app |
+
+The app at runtime needs only the two `VITE_` variables (browser) and the function
+secrets (server). The Supabase access token is a deployment tool: nothing in the app,
+the functions or the scripts reads it, and it should be revoked when not in use.
 
 Only the two `VITE_` variables ever reach the browser. The following guards enforce
 that:
@@ -230,8 +235,17 @@ production project by accident: check the project ref at each step.
   - `ai_pricing` (INR per million tokens, used for cost estimates and budget checks);
   - `ai_max_retries`, `ai_max_output_tokens`, `ai_request_timeout_seconds`.
 - **Budget.** `ai_monthly_budget` is **null by default**, and processing refuses to
-  start (`BUDGET_NOT_CONFIGURED`) until an admin sets a budget. Keep `ai_pricing` in
-  line with the provider's current prices.
+  start (`BUDGET_NOT_CONFIGURED`) until a budget is set. Keep `ai_pricing` in line with
+  the provider's current prices.
+  - There is no settings screen yet (Admin → System Settings is a placeholder). Set the
+    budget in the Supabase dashboard's SQL editor. The amount is in the `ai_pricing`
+    currency (INR), and the database rejects anything but a non-negative number:
+    ```sql
+    insert into public.system_settings (key, value_json)
+    values ('ai_monthly_budget', '2000'::jsonb)
+    on conflict (key) do update set value_json = excluded.value_json;
+    ```
+  - To turn processing off again, delete that row (a missing row means "not set").
 - **Provider selection:**
   - **Local development and tests:** `AI_PROVIDER=mock` in `supabase/functions/.env`
     uses the deterministic mock provider. It never makes a network call.
@@ -260,6 +274,10 @@ production project by accident: check the project ref at each step.
   Their logs record events, not request bodies, PINs, tokens, prompts or AI output.
 - **Browser:**
   - production error screens show plain messages, never raw error text;
+  - every form reports a failed save in plain words (onboarding included), keeps what
+    was typed, and can be retried;
+  - an unreachable server is reported as a connection problem, whichever client
+    (database, Storage or Edge Function) made the request;
   - the error boundary logs only the error's class name;
   - no debug logging remains (only development-mode logging);
   - expected errors are handled in the UI and not logged.
@@ -293,6 +311,9 @@ production project by accident: check the project ref at each step.
 - [ ] Install the PWA on a phone (Add to Home Screen). It opens standalone, and the
       session survives a restart.
 - [ ] Manager test account: sees only the assigned user.
+- [ ] After any release that adds a migration: `npx supabase db push --dry-run`, review
+      the list, then `npx supabase db push` (before or together with the frontend
+      deploy).
 - [ ] If AI is enabled: process **one** designated test user. Check the attempt row
       (provider, model, tokens, cost) and the admin AI usage view. Do not process real
       users just to test.
@@ -310,13 +331,72 @@ production project by accident: check the project ref at each step.
 - CSP and headers, and direct navigation on every route;
 - every browser suite against the production build.
 
-**Not yet verified against cloud infrastructure.** No Supabase cloud project, access
-token, Vercel project or Anthropic key is configured in this environment. Remaining
-actions:
+**Verified against cloud infrastructure** (Supabase project `eeltuzswkhsewtpepgsf` in
+Mumbai, `ap-south-1`; Vercel production domain `https://trackfitbuddy.vercel.app`):
 
-- the first `db push` to a hosted project;
-- `supabase functions deploy`, including the hosted gateway's handling of the bundled
-  shared code (verified here with the same bundler);
-- the hosted Auth settings;
-- a live Claude request;
-- `npm run smoke:deployment` against the real URLs.
+- `db push`: the 16 migrations up to `20261007000100` applied to the fresh hosted database, the remote history
+  matches the repository, and `db lint --linked` reports no errors;
+- `supabase functions deploy` (Docker bundling) for all three functions, including the
+  two that import shared code from `src/` and `scripts/lib/`;
+- the hosted gateway: `verify_jwt` is off for `pin-login` and on for the other two, and
+  it adds no CORS headers of its own, so the functions' allow-list decides;
+- CORS: only the production origin is allowed, on all three functions;
+- Auth settings: public sign-up refused, confirmation off, phone and anonymous sign-ins
+  off, Site URL set;
+- anonymous access: no profile reads, no public access to the `inbody-reports` bucket;
+- the Vercel build: it passes the build guard and bundle scan with Vercel's
+  `VITE_VERCEL_*` system variables present, and none of them is in the published bundle;
+- the live site: every route (including nested ones) returns 200, a missing asset is a
+  404, the manifest and service worker are served, and the security headers and CSP are
+  present;
+- sign-in as the super admin, and `npm run smoke:deployment` with a designated test
+  account (run by the project owner; all checks passed).
+
+Hosting notes:
+
+- Use the stable production domain. Vercel's per-deployment URLs
+  (`<project>-<hash>-<team>.vercel.app`) change on every deploy and sit behind Vercel's
+  Deployment Protection, so they must not be used for `ALLOWED_ORIGINS` or the Site URL.
+- A Supabase project's region cannot be changed. Moving region means a new project and
+  repeating the steps above (which is how this project moved from Tokyo to Mumbai before
+  any real data existed).
+- Once the CLI is linked to the project, `supabase start` runs the local stack with the
+  **same service versions as production** (PostgREST, Postgres, Auth, Storage). Run the
+  database and integration suites on a linked checkout before a release: version
+  differences are real (the stale-correction hang above only appears on production's
+  PostgREST version). After adding a file in a new directory to an Edge Function's
+  imports, restart the local stack so the runtime can see it.
+- The CLI can act for one account without changing a stored login: set
+  `SUPABASE_ACCESS_TOKEN` for the command. Keep the token in a git-ignored file, and
+  revoke it when it is no longer needed.
+
+**Production hardening release** (reliability and UX fixes; see the commit "harden
+production reliability and UX"). Verified locally on the production build at 390, 768,
+820, 1024 and 1440 px:
+
+- Progress range switching, loading and error states;
+- sheets and dialogs (fit, focus trap, Escape, no loss of input on a backdrop tap);
+- accessibility probes on every page;
+- offline saves and page loads, a missing chunk after a deployment, and logout.
+
+The release adds two migrations, which must be pushed to the production database
+(checklist above):
+
+- `20261011000100_inbody_orphan_cleanup.sql`: until it is pushed, a refused InBody upload
+  is still rejected up front by validation, but a file whose record fails for another
+  reason is not removed.
+- `20261011000200_stale_correction_conflict.sql`: **a production bug fix.** Until it is
+  pushed, a stale admin correction (two admins correcting the same record) hangs
+  instead of reporting the conflict, because production's PostgREST version retries the
+  old error code.
+
+**Still not verified:**
+
+- a live Claude request: `ANTHROPIC_API_KEY` is not set and `ai_monthly_budget` is null,
+  so AI processing is off. To enable it, set the key and a budget, then process one
+  designated test user;
+- installing the PWA on a physical phone;
+- the browser walkthrough of every feature on the live site (After deployment, second
+  item). The automated browser audit runs against the production build with the local
+  database, not against the live site;
+- deploying functions with `--use-api`.

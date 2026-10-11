@@ -4,7 +4,13 @@ import { FormField } from '@/components/common/form-field'
 import { InlineAlert } from '@/components/common/inline-alert'
 import { StatusBadge } from '@/components/data/status-badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  keepOpenOnOutsideInteraction,
+} from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/input'
 import { notify } from '@/lib/feedback'
 
@@ -192,7 +198,7 @@ export function CorrectionDialog({
       }}
     >
       {open && (
-        <DialogContent size="md">
+        <DialogContent size="md" onInteractOutside={keepOpenOnOutsideInteraction}>
           <DialogHeader eyebrow="Admin correction" title={title} />
           <div className="flex max-h-[65dvh] flex-col gap-5 overflow-y-auto pr-1">
             <section aria-label="Original" className="flex flex-col gap-2">
@@ -314,7 +320,7 @@ export function ConfirmDialog({
       }}
     >
       {open && (
-        <DialogContent>
+        <DialogContent onInteractOutside={keepOpenOnOutsideInteraction}>
           <DialogHeader eyebrow={eyebrow} title={title} description={description} />
           <div className="flex flex-col gap-4">
             {children}

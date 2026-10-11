@@ -154,7 +154,7 @@ Every correction function works the same way:
    then sets `app.audit_reason` and `app.audit_action = 'ADMIN_CORRECTION'` for the
    transaction.
 2. **Concurrency:** the row is locked (`FOR UPDATE`) and its `updated_at` is compared
-   with the version the admin opened. A mismatch raises 40001 ("This record changed since
+   with the version the admin opened. A mismatch raises `PT409`, returned as HTTP 409 ("This record changed since
    you opened it"), and nothing is written.
 3. **Validation:** values are checked against the same ranges and constraints as the
    user-facing flows and CHECK constraints. A correction that changes nothing is refused.

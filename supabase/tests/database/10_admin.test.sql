@@ -155,7 +155,7 @@ select throws_ok($$ delete from public.user_roles where user_id = '00000000-0000
 -- ---------------------------------------------------------------------------
 select tests.login('00000000-0000-0000-0000-0000000000a2');
 select throws_ok($$ select public.admin_correct_steps('00000000-0000-0000-000b-0000000000a1', now() - interval '1 year', 9000) $$,
-  '40001', null, 'a stale version is rejected (another admin changed it)');
+  'PT409', null, 'a stale version is rejected (another admin changed it)');
 select lives_ok(
   $$ select public.admin_correct_steps('00000000-0000-0000-000b-0000000000a1',
        tests.ver('steps_entries', '00000000-0000-0000-000b-0000000000a1'), 8000, 'Missing a zero') $$,

@@ -49,6 +49,9 @@ interface NutritionProgressProps {
  * Calories against the date-specific target, then one macro at a time.
  * Adherence counts eligible tracked days only (spec §28).
  */
+// The nutrient charts stack below lg and sit side by side from lg up.
+const NUTRITION_SKELETON = ['h-64', 'h-64 lg:hidden'] as const
+
 export function NutritionProgress({ query, period, today }: NutritionProgressProps) {
   const [macro, setMacro] = useState<MacroKey>('proteinG')
 
@@ -71,7 +74,7 @@ export function NutritionProgress({ query, period, today }: NutritionProgressPro
       {query.isError ? (
         <SectionError title="Nutrition data unavailable" onRetry={() => void query.refetch()} />
       ) : !derived ? (
-        <SectionSkeleton />
+        <SectionSkeleton blocks={NUTRITION_SKELETON} />
       ) : query.data?.days.length === 0 ? (
         <NoData title="No food logged">
           Log meals to see your intake against your targets for this period.

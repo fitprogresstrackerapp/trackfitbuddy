@@ -11,7 +11,7 @@ import {
   fetchTrainingPeriod,
   type CurrentPlan,
 } from '../api/progress-data'
-import type { CycleInfo, NutritionPeriodData, Period, SnapshotInfo } from '../types'
+import type { BodyPeriodData, CycleInfo, NutritionPeriodData, Period, SnapshotInfo } from '../types'
 
 vi.mock('../api/progress-data', () => ({
   fetchCurrentPlan: vi.fn(),
@@ -331,5 +331,107 @@ describe('Body and goals', () => {
       expect(section('Nutrition').textContent).toContain('tracked days')
     })
     expect(section('Training').querySelector('[data-slot="skeleton"]')).not.toBeNull()
+  })
+})
+
+describe('Switching the range', () => {
+  const SEVEN_DAYS = '2026-09-22'
+  const body30: BodyPeriodData = {
+    weights: [
+      { date: '2026-09-05', weightKg: 80.0, source: 'MANUAL', createdAt: '2026-09-05T08:00:00Z' },
+      { date: '2026-09-26', weightKg: 78.6, source: 'INBODY', createdAt: '2026-09-26T08:00:00Z' },
+    ],
+    composition: [],
+  }
+  const body7: BodyPeriodData = {
+    weights: [
+      { date: '2026-09-24', weightKg: 79.2, source: 'MANUAL', createdAt: '2026-09-24T08:00:00Z' },
+      { date: '2026-09-26', weightKg: 78.6, source: 'INBODY', createdAt: '2026-09-26T08:00:00Z' },
+    ],
+    composition: [],
+  }
+
+  /** The 7D body request stays open until the test settles it. */
+  function holdSevenDayBody() {
+    let resolve: (value: BodyPeriodData) => void = () => undefined
+    let reject: (reason: Error) => void = () => undefined
+    vi.mocked(fetchBodyPeriod).mockImplementation((_client, _user, period) =>
+      period.start === SEVEN_DAYS
+        ? new Promise((res, rej) => {
+            resolve = res
+            reject = rej
+          })
+        : Promise.resolve(body30),
+    )
+    return {
+      resolve: () => {
+        resolve(body7)
+      },
+      reject: () => {
+        reject(new Error('network down'))
+      },
+    }
+  }
+
+  it('shows the new range as loading, never the previous range’s numbers', async () => {
+    const pending = holdSevenDayBody()
+    await openProgress()
+    expect(section('Body').textContent).toContain('80 → 78.6 kg')
+
+    fireEvent.click(screen.getByRole('radio', { name: '7D' }))
+    // Immediately: the label is the new range and the old figures are gone.
+    await waitFor(() => {
+      expect(main()).toContain('SEP 22 – SEP 28')
+    })
+    expect(section('Body').textContent).not.toContain('80 → 78.6 kg')
+    expect(section('Body').querySelector('[data-slot="skeleton"]')).not.toBeNull()
+    expect(screen.getByRole('status').textContent).toBe('Loading 7D data')
+    // Sections whose data already arrived show the new range, not the old one.
+    await waitFor(() => {
+      expect(section('Nutrition').textContent).toContain('1 tracked day')
+    })
+    expect(section('Nutrition').textContent).not.toContain('2 tracked days')
+
+    pending.resolve()
+    await waitFor(() => {
+      expect(section('Body').textContent).toContain('79.2 → 78.6 kg')
+    })
+    expect(section('Body').querySelector('[data-slot="skeleton"]')).toBeNull()
+    expect(screen.getByRole('status').textContent).toBe('')
+  })
+
+  it('a range seen before appears at once, without a new request', async () => {
+    await openProgress()
+    fireEvent.click(screen.getByRole('radio', { name: '7D' }))
+    await waitFor(() => {
+      expect(section('Nutrition').textContent).toContain('1 tracked day')
+    })
+    const calls = vi.mocked(fetchNutritionPeriod).mock.calls.length
+    fireEvent.click(screen.getByRole('radio', { name: '30D' }))
+    expect(section('Nutrition').textContent).toContain('2 tracked days')
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull()
+    expect(vi.mocked(fetchNutritionPeriod).mock.calls.length).toBe(calls)
+  })
+
+  it('a failed range shows an error with retry, not the previous numbers', async () => {
+    const pending = holdSevenDayBody()
+    await openProgress()
+    fireEvent.click(screen.getByRole('radio', { name: '7D' }))
+    await waitFor(() => {
+      expect(section('Body').querySelector('[data-slot="skeleton"]')).not.toBeNull()
+    })
+    pending.reject()
+    await waitFor(() => {
+      expect(section('Body').textContent).toContain('Body data unavailable')
+    })
+    expect(section('Body').textContent).not.toContain('80 → 78.6 kg')
+    // The other sections are unaffected.
+    expect(section('Nutrition').textContent).toContain('1 tracked day')
+
+    vi.mocked(fetchBodyPeriod).mockResolvedValue(body7)
+    fireEvent.click(within(section('Body')).getByRole('button', { name: /retry/i }))
+    await waitFor(() => {
+      expect(section('Body').textContent).toContain('79.2 → 78.6 kg')
+    })
   })
 })

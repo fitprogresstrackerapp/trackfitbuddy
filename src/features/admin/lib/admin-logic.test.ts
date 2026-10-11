@@ -50,7 +50,7 @@ describe('audit display', () => {
 
 describe('friendlyAdminError', () => {
   it('maps known server errors to plain text', () => {
-    expect(friendlyAdminError({ code: '40001', message: 'x' }, 'f')).toMatch(/changed since/)
+    expect(friendlyAdminError({ code: 'PT409', message: 'x' }, 'f')).toMatch(/changed since/)
     expect(friendlyAdminError({ code: '22023', message: 'Nothing to correct' }, 'f')).toMatch(
       /Nothing changed/,
     )

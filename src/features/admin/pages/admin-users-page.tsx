@@ -148,7 +148,16 @@ export function AdminUsersPage() {
         </div>
       </Section>
 
-      <Section title="Users" meta={users.data ? `${String(users.data.total)} found` : undefined}>
+      <Section
+        title="Users"
+        meta={
+          users.isPlaceholderData
+            ? 'Updating…'
+            : users.data
+              ? `${String(users.data.total)} found`
+              : undefined
+        }
+      >
         {users.isError ? (
           <SectionError title="Users unavailable" onRetry={() => void users.refetch()} />
         ) : users.isPending ? (
@@ -160,7 +169,12 @@ export function AdminUsersPage() {
             description="Try a different search or filter."
           />
         ) : (
-          <>
+          // Rows of the previous search/page stay in place (no jump) but are
+          // marked as updating until the new result arrives.
+          <div
+            aria-busy={users.isPlaceholderData || undefined}
+            className="flex flex-col gap-5 transition-opacity aria-busy:opacity-60"
+          >
             <div className="hidden md:block">
               <table className="w-full text-sm">
                 <caption className="sr-only">Users</caption>
@@ -236,7 +250,7 @@ export function AdminUsersPage() {
               total={users.data.total}
               onPage={setPage}
             />
-          </>
+          </div>
         )}
       </Section>
 

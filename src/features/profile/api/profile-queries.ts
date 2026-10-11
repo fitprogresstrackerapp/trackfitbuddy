@@ -171,7 +171,7 @@ export function useProfileMutations(userId: string) {
   })
 
   const inbody = useMutation({
-    mutationFn: (input: { date: string; file: File }) =>
+    mutationFn: (input: { date: string; file: File; today: string }) =>
       uploadInbodyReport(supabase, userId, input),
     onSuccess: () =>
       invalidate(profileKeys.inbody(userId), profileKeys.weights(userId), progressKeys.all(userId)),

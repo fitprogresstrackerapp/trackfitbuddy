@@ -1,6 +1,7 @@
 import { LATE_ENTRY_DAYS } from '@/lib/dates/day-param'
 
 import type { FoodOption, LoggedMeal, MealCategory } from '../types'
+import { isNetworkError, NETWORK_ERROR_MESSAGE } from '@/lib/errors/network-error'
 
 /*
  * Pure Food rules. The database is authoritative for nutrition (snapshots),
@@ -148,12 +149,7 @@ export function friendlyError(
   error: unknown,
   fallback = 'Something went wrong. Please try again.',
 ): string {
-  if (
-    error instanceof TypeError ||
-    (error instanceof Error && /fetch|network/i.test(error.message))
-  ) {
-    return 'Couldn’t reach the server. Check your connection and try again.'
-  }
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE
   if (error && typeof error === 'object') {
     const { code, message } = error as { code?: unknown; message?: unknown }
     if (typeof message === 'string') {

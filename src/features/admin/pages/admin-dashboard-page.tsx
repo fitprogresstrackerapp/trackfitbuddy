@@ -102,7 +102,10 @@ export function AdminDashboardPage() {
               <div key={item.label} className="flex flex-col gap-1 bg-background px-3 py-2.5">
                 <dt className="label-mono text-muted-foreground">
                   {item.to ? (
-                    <Link to={item.to} className="hover:text-foreground">
+                    <Link
+                      to={item.to}
+                      className="relative rounded-xs outline-none after:absolute after:-inset-x-1 after:-inset-y-2 after:content-[''] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    >
                       {item.label}
                     </Link>
                   ) : (

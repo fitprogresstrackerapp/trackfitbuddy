@@ -2,6 +2,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js'
 
 import type { AppSupabaseClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/database'
+import { isNetworkError } from '@/lib/errors/network-error'
 
 /*
  * Admin recommendation processing (spec §42; Prompt 10 §44–49, §107).
@@ -226,6 +227,8 @@ export async function runProcessing(
       } catch {
         // keep the generic code
       }
+    } else if (isNetworkError(error)) {
+      code = 'NETWORK'
     }
     throw new ProcessingError(code)
   }
@@ -242,6 +245,7 @@ const PROCESSING_ERROR_MESSAGES: Record<string, string> = {
   PRICING_NOT_CONFIGURED: 'Model pricing is missing or uses a different currency than the budget.',
   PROMPT_NOT_FOUND: 'The configured prompt version does not exist.',
   INVALID_INPUT: 'The request was not valid.',
+  NETWORK: 'Couldn’t reach the server. Check your connection and try again.',
 }
 
 export function processingErrorMessage(error: unknown): string {

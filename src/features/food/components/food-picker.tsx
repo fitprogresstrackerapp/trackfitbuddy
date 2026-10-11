@@ -39,6 +39,8 @@ export function FoodPicker({ userId, onSelect, onCreate }: FoodPickerProps) {
   const loading = searching
     ? search.pending || (search.isFetching && !search.data)
     : usage.isPending
+  // Results on screen may belong to the previous query while the next one loads.
+  const outdated = searching && (search.pending || search.isPlaceholderData)
 
   return (
     <div className="flex flex-col gap-4">
@@ -88,7 +90,11 @@ export function FoodPicker({ userId, onSelect, onCreate }: FoodPickerProps) {
         </div>
       )}
 
-      <div id={listId} aria-busy={loading || undefined}>
+      <div
+        id={listId}
+        aria-busy={loading || outdated || undefined}
+        className="transition-opacity aria-busy:opacity-60"
+      >
         {list.isError ? (
           <InlineAlert title="Foods couldn’t be loaded">
             <span className="flex flex-wrap items-center gap-3">

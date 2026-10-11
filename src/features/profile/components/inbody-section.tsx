@@ -19,7 +19,9 @@ import {
   INBODY_FILE_TYPES,
   INBODY_MAX_BYTES,
   inbodyReportUrl,
+  InbodyUploadError,
   type InbodyReport,
+  type InbodyUploadProblem,
 } from '../api/profile-data'
 import type { useProfileMutations } from '../api/profile-queries'
 import { friendlyProfileError } from '../lib/profile-logic'
@@ -96,12 +98,9 @@ export function InbodySection({ reports, today, mutations }: InbodySectionProps)
           today={today}
           onSave={async (input) => {
             try {
-              await mutations.inbody.mutateAsync(input)
+              await mutations.inbody.mutateAsync({ ...input, today })
             } catch (error) {
-              throw new Error(
-                friendlyProfileError(error, 'Couldn’t upload the report. Please try again.'),
-                { cause: error },
-              )
+              throw new Error(inbodyUploadMessage(error), { cause: error })
             }
             setOpen(false)
             notify.success('Report uploaded', formatDayLabel(input.date))
@@ -157,6 +156,23 @@ function ViewReport({ path }: { path: string }) {
       View file
     </Button>
   )
+}
+
+const UPLOAD_PROBLEMS: Record<InbodyUploadProblem, string> = {
+  INVALID_DATE: 'Enter a valid date.',
+  FUTURE_DATE: 'The date can’t be in the future.',
+  FILE_TYPE: 'Use a PDF or an image (JPG, PNG, WebP, HEIC).',
+  FILE_SIZE: 'The file must be 10 MB or smaller.',
+}
+
+/** Plain text for a failed upload; never the storage or database message. */
+function inbodyUploadMessage(error: unknown): string {
+  if (error instanceof InbodyUploadError) return UPLOAD_PROBLEMS[error.problem]
+  const message = error instanceof Error ? error.message : ''
+  if (/maximum allowed size|too large|payload/i.test(message)) return UPLOAD_PROBLEMS.FILE_SIZE
+  if (/mime type|not supported/i.test(message)) return UPLOAD_PROBLEMS.FILE_TYPE
+  if (/future/i.test(message)) return UPLOAD_PROBLEMS.FUTURE_DATE
+  return friendlyProfileError(error, 'Couldn’t upload the report. Please try again.')
 }
 
 function UploadForm({
@@ -224,7 +240,7 @@ function UploadForm({
             onChange={(event) => {
               setFile(event.target.files?.[0] ?? null)
             }}
-            className="text-sm text-foreground-secondary file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-border file:bg-surface-2 file:px-3 file:py-2 file:text-sm file:text-foreground"
+            className="rounded-sm text-sm text-foreground-secondary outline-none file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-border file:bg-surface-2 file:px-3 file:py-2 file:text-sm file:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1"
           />
         )}
       </FormField>

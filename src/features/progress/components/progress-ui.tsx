@@ -57,7 +57,18 @@ export function NoData({ title, children }: { title: string; children: ReactNode
   )
 }
 
-export function SectionSkeleton({ chart = true }: { chart?: boolean }) {
+/**
+ * Loading stand-in for a section. Its height should be close to the loaded
+ * section's, so switching the range does not make the page jump: `blocks` adds
+ * further placeholder blocks (class names give their height and breakpoints).
+ */
+export function SectionSkeleton({
+  chart = true,
+  blocks = [],
+}: {
+  chart?: boolean
+  blocks?: readonly string[]
+}) {
   return (
     <div className="flex flex-col gap-4" aria-hidden="true">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -66,6 +77,9 @@ export function SectionSkeleton({ chart = true }: { chart?: boolean }) {
         ))}
       </div>
       {chart && <Skeleton className="h-52 w-full" />}
+      {blocks.map((block) => (
+        <Skeleton key={block} className={cn('w-full', block)} />
+      ))}
     </div>
   )
 }

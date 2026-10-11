@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  keepOpenOnOutsideInteraction,
   Sheet,
   SheetContent,
   SheetHeader,
@@ -126,7 +127,7 @@ export function ResetPinDialog({
       }}
     >
       {open && (
-        <DialogContent>
+        <DialogContent onInteractOutside={keepOpenOnOutsideInteraction}>
           <DialogHeader
             eyebrow="Account"
             title={`Reset PIN for ${name}`}

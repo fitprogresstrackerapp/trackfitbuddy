@@ -34,8 +34,16 @@ const buttonVariants = cva(
         'icon-sm': 'size-8',
       },
     },
-    // Links are inline text: no box height or padding, whatever the size.
-    compoundVariants: [{ variant: 'link', class: 'h-auto px-0' }],
+    // Links are inline text: no box height or padding, whatever the size. The
+    // invisible ::after extends the hit area to a comfortable touch target
+    // without changing the layout.
+    compoundVariants: [
+      {
+        variant: 'link',
+        class:
+          "relative h-auto px-0 after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
+      },
+    ],
     defaultVariants: {
       variant: 'primary',
       size: 'md',

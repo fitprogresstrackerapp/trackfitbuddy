@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { saveBasics, saveMeasurements } from '../api/onboarding'
 import { BasicsStep } from '../components/basics-step'
 import { MeasurementsStep } from '../components/measurements-step'
+import { friendlyProfileError } from '../lib/profile-logic'
 
 const STEPS = [
   { number: 1, title: 'Basic information' },
@@ -73,8 +74,10 @@ export function OnboardingPage() {
           initial={{ name: profile.name, dateOfBirth: profile.dateOfBirth, gender: profile.gender }}
           today={today}
           onSubmit={async (input) => {
-            await saveBasics(supabase, profile.id, input)
-            await refreshAccount()
+            await saved(async () => {
+              await saveBasics(supabase, profile.id, input)
+              await refreshAccount()
+            })
             setStep(2)
           }}
         />
@@ -85,12 +88,25 @@ export function OnboardingPage() {
             setStep(1)
           }}
           onSubmit={async (input) => {
-            await saveMeasurements(supabase, input)
-            // Readiness becomes complete → the route guard moves to Home.
-            await refreshAccount()
+            await saved(async () => {
+              await saveMeasurements(supabase, input)
+              // Readiness becomes complete → the route guard moves to Home.
+              await refreshAccount()
+            })
           }}
         />
       )}
     </div>
   )
+}
+
+/** Runs a save step; failures surface as plain text, never database messages. */
+async function saved(action: () => Promise<void>): Promise<void> {
+  try {
+    await action()
+  } catch (error) {
+    throw new Error(friendlyProfileError(error, 'Couldn’t save your details. Please try again.'), {
+      cause: error,
+    })
+  }
 }

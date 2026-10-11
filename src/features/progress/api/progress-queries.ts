@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { getSupabaseClient } from '@/lib/supabase/client'
@@ -30,11 +30,16 @@ export const progressKeys = {
     ['progress', userId, 'steps', period.start, period.end] as const,
 }
 
-/** History changes rarely while viewing; refetch when the user returns. */
+/**
+ * History changes rarely while viewing; refetch when the user returns.
+ *
+ * No `placeholderData`: a newly selected range must never show the previous
+ * range's numbers under its own label. An uncached range is pending (each
+ * section shows its skeleton); a cached range appears at once.
+ */
 const OPTIONS = {
   staleTime: 60_000,
   refetchOnWindowFocus: true,
-  placeholderData: keepPreviousData,
 } as const
 
 function useSupabase() {

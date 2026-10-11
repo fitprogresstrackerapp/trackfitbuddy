@@ -94,6 +94,10 @@ it was created with. Edits on Profile therefore apply to the **next** recommenda
     all.
   - A trigger requires a user's `inbody_reports.file_path` to be in their own folder and
     the report date not to be in the future.
+  - **No orphaned files:** the date, file type and size are checked before anything is
+    uploaded. If recording the report still fails, the file just uploaded is removed
+    again. Storage lets a user delete only a file in their own folder that no report
+    row references, so a file that belongs to a report can't be deleted by its owner.
 - **No extraction:** there is no OCR or AI extraction. New reports show "Awaiting results"
   until structured metrics are added by later processing or an admin. Only stored metrics
   are shown (weight, body fat, muscle mass, BMI, BMR).

@@ -146,6 +146,24 @@ describe('service worker', () => {
     expect(sw.network).toHaveBeenCalledTimes(1)
   })
 
+  it('does not cache failed or non-basic asset responses', async () => {
+    const sw = load()
+    // A chunk removed by a newer deployment: the 404 must not be stored.
+    sw.network.mockResolvedValueOnce(
+      Object.defineProperty(new Response('Not found', { status: 404 }), 'type', { value: 'basic' }),
+    )
+    const missing = await sw.request('/assets/old-chunk-123.js')
+    expect(missing?.status).toBe(404)
+    // A redirected/opaque response is passed through but never stored.
+    sw.network.mockResolvedValueOnce(
+      Object.defineProperty(new Response('x', { status: 200 }), 'type', {
+        value: 'opaqueredirect',
+      }),
+    )
+    await sw.request('/assets/other-456.js')
+    expect(cachedUrls(sw.stores)).toEqual([])
+  })
+
   it('navigations are network-first, fall back to the cached shell offline, and are not stored', async () => {
     const sw = load()
     await sw.lifecycle('install')

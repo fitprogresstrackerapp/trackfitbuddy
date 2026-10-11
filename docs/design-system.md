@@ -60,6 +60,11 @@ Use monospace only for metadata, never for body text.
   - Completed actions get a toast via `notify`.
 - **Overlays:** `Dialog` for confirmations. For mobile forms use `Sheet`, which is a bottom
   sheet below 768px and a right-hand panel above it. Both trap focus and close on Escape.
+  A `Sheet` (and any dialog that contains inputs) stays open when the backdrop is tapped,
+  so a stray tap can't discard typed input; it closes via Close, Cancel or Escape. Plain
+  confirmation dialogs still close on an outside press.
+- **Touch targets:** text links, checkboxes and radios have an invisible hit area larger
+  than the visible control; the visible size and layout are unchanged.
 
 ## Shell breakpoints
 

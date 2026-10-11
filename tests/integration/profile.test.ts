@@ -220,7 +220,7 @@ describe('Profile', () => {
   describe('InBody files', () => {
     it('stores the original report privately; only the owner can read it', async () => {
       const file = new File(['%PDF-1.4\n%%EOF\n'], 'scan.pdf', { type: 'application/pdf' })
-      await uploadInbodyReport(ownerClient, owner.userId, { date: TODAY, file })
+      await uploadInbodyReport(ownerClient, owner.userId, { date: TODAY, file, today: TODAY })
       const reports = await fetchInbodyReports(ownerClient, owner.userId)
       const uploaded = reports.find((report) => report.date === TODAY)
       expect(uploaded).toMatchObject({ status: 'PENDING', metrics: null })

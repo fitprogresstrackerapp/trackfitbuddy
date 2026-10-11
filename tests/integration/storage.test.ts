@@ -9,6 +9,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import {
   INBODY_BUCKET,
   inbodyReportUrl,
+  InbodyUploadError,
   uploadInbodyReport,
 } from '@/features/profile/api/profile-data'
 import { addDays } from '@/lib/dates/local-date'
@@ -39,7 +40,7 @@ describe('InBody storage', () => {
     other = await signedInClient(x.phone, x.pin)
     adminUser = await signedInClient(a.phone, a.pin)
     manager = await signedInClient(m.phone, m.pin)
-    await uploadInbodyReport(owner, ownerId, { date: TODAY, file: pdf() })
+    await uploadInbodyReport(owner, ownerId, { date: TODAY, file: pdf(), today: TODAY })
     const report = await must(
       service.from('inbody_reports').select('file_path').eq('user_id', ownerId).single(),
     )
@@ -113,9 +114,84 @@ describe('InBody storage', () => {
     expect(html.error).not.toBeNull()
   })
 
-  it('a report dated in the future is rejected', async () => {
-    await expect(
-      uploadInbodyReport(owner, ownerId, { date: addDays(TODAY, 2), file: pdf() }),
-    ).rejects.toMatchObject({ code: '22023' })
+  describe('rejected uploads leave no file behind', () => {
+    const filesInFolder = async () =>
+      ((await service.storage.from(INBODY_BUCKET).list(ownerId)).data ?? []).map((f) => f.name)
+
+    it('a future date, wrong type or oversized file is refused before anything is uploaded', async () => {
+      const before = await filesInFolder()
+      const attempts: [Parameters<typeof uploadInbodyReport>[2], string][] = [
+        [{ date: addDays(TODAY, 2), file: pdf(), today: TODAY }, 'FUTURE_DATE'],
+        [{ date: 'yesterday', file: pdf(), today: TODAY }, 'INVALID_DATE'],
+        [
+          {
+            date: TODAY,
+            file: new File(['<p>x</p>'], 'a.html', { type: 'text/html' }),
+            today: TODAY,
+          },
+          'FILE_TYPE',
+        ],
+        [
+          {
+            date: TODAY,
+            file: new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'big.pdf', {
+              type: 'application/pdf',
+            }),
+            today: TODAY,
+          },
+          'FILE_SIZE',
+        ],
+      ]
+      for (const [input, problem] of attempts) {
+        const error: unknown = await uploadInbodyReport(owner, ownerId, input).catch(
+          (caught: unknown) => caught,
+        )
+        expect(error).toBeInstanceOf(InbodyUploadError)
+        expect(error).toMatchObject({ problem, code: '22023' })
+      }
+      expect(await filesInFolder()).toEqual(before)
+    })
+
+    it('when the database refuses the record, the uploaded file is removed again', async () => {
+      const before = await filesInFolder()
+      // A caller with a wrong clock passes the client check; the server's own
+      // date rule (the user's local date) still refuses the future report.
+      await expect(
+        uploadInbodyReport(owner, ownerId, {
+          date: addDays(TODAY, 2),
+          file: pdf(),
+          today: addDays(TODAY, 5),
+        }),
+      ).rejects.toMatchObject({ code: '22023' })
+      expect(await filesInFolder()).toEqual(before)
+      const reports = await must(service.from('inbody_reports').select('id').eq('user_id', ownerId))
+      expect(reports).toHaveLength(1)
+    })
+  })
+
+  describe('file deletion is limited to unreferenced files in the own folder', () => {
+    it('a file that belongs to a report cannot be deleted, even by its owner', async () => {
+      await owner.storage.from(INBODY_BUCKET).remove([path])
+      expect((await owner.storage.from(INBODY_BUCKET).download(path)).error).toBeNull()
+    })
+
+    it('nobody else can delete a user’s unreferenced file; the owner can', async () => {
+      const stray = `${ownerId}/stray-${String(Date.now())}.pdf`
+      const upload = await owner.storage
+        .from(INBODY_BUCKET)
+        .upload(stray, pdf(), { contentType: 'application/pdf' })
+      expect(upload.error).toBeNull()
+
+      const anon = createClient(env().supabaseUrl, env().anonKey, {
+        auth: { persistSession: false },
+      })
+      for (const client of [other, manager, anon]) {
+        await client.storage.from(INBODY_BUCKET).remove([stray])
+      }
+      expect((await owner.storage.from(INBODY_BUCKET).download(stray)).error).toBeNull()
+
+      await owner.storage.from(INBODY_BUCKET).remove([stray])
+      expect((await owner.storage.from(INBODY_BUCKET).download(stray)).data).toBeNull()
+    })
   })
 })

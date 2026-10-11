@@ -1,6 +1,7 @@
 import type { Json } from '@/types/database'
 
 import type { AppRole, AuditAction, AuditEntry, RecommendationStatus } from '../api/admin-data'
+import { isNetworkError, NETWORK_ERROR_MESSAGE } from '@/lib/errors/network-error'
 
 /*
  * Pure display rules for the admin area. Authorization is never decided here:
@@ -147,12 +148,12 @@ const ACTION_CODES: Record<string, string> = {
   NOT_FOUND: 'That user no longer exists.',
   INVALID_INPUT: 'Check the values and try again.',
   UNAUTHENTICATED: 'Your session has expired. Sign in again.',
+  NETWORK: NETWORK_ERROR_MESSAGE,
 }
 
 /** Admin-facing text; never raw database or provider messages. */
 export function friendlyAdminError(error: unknown, fallback: string): string {
-  if (error instanceof TypeError)
-    return 'Couldn’t reach the server. Check your connection and try again.'
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE
   if (error && typeof error === 'object') {
     const { code, message } = error as { code?: unknown; message?: unknown }
     if (typeof code === 'string' && code in ACTION_CODES) return ACTION_CODES[code] ?? fallback
@@ -160,7 +161,8 @@ export function friendlyAdminError(error: unknown, fallback: string): string {
       const known = KNOWN_ERRORS.find(([pattern]) => pattern.test(message))
       if (known) return known[1]
     }
-    if (code === '40001') return 'This record changed since you opened it. Refresh and try again.'
+    // PT409: the record's version no longer matches (HTTP 409 from the database).
+    if (code === 'PT409') return 'This record changed since you opened it. Refresh and try again.'
     if (code === '42501') return 'You are not allowed to do this.'
     if (code === '22023' && typeof message === 'string' && message.length < 120) return message
     if (code === '23514') return 'One of the values is not allowed.'

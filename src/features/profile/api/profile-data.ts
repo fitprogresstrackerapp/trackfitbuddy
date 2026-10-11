@@ -323,19 +323,59 @@ const EXTENSIONS: Record<string, string> = {
   'image/heic': 'heic',
 }
 
+export type InbodyUploadProblem = 'INVALID_DATE' | 'FUTURE_DATE' | 'FILE_TYPE' | 'FILE_SIZE'
+
+/** Refused before anything is uploaded; `code` mirrors the database's 22023. */
+export class InbodyUploadError extends Error {
+  readonly code = '22023'
+  readonly problem: InbodyUploadProblem
+
+  constructor(problem: InbodyUploadProblem) {
+    super(`InBody upload refused: ${problem}`)
+    this.name = 'InbodyUploadError'
+    this.problem = problem
+  }
+}
+
+/**
+ * Everything about an upload that can be checked without the server: the
+ * same rules the bucket (type, size) and the database (date) enforce.
+ */
+export function inbodyUploadProblem(
+  input: { date: string; file: File },
+  today: string,
+): InbodyUploadProblem | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return 'INVALID_DATE'
+  if (input.date > today) return 'FUTURE_DATE'
+  if (!(INBODY_FILE_TYPES as readonly string[]).includes(input.file.type)) return 'FILE_TYPE'
+  if (input.file.size > INBODY_MAX_BYTES) return 'FILE_SIZE'
+  return null
+}
+
 /**
  * Stores the original report in the user's private folder and records it for
  * later extraction (status PENDING). Nothing is read from the file here.
+ *
+ * No file is left without a record: the input is validated before anything
+ * is uploaded, and if recording the report still fails, the file just
+ * uploaded is removed again. Storage only lets a user delete an unreferenced
+ * file in their own folder; a failed cleanup leaves a file that only its
+ * owner (and admins) can read.
  */
 export async function uploadInbodyReport(
   supabase: AppSupabaseClient,
   userId: string,
-  input: { date: string; file: File },
+  input: { date: string; file: File; today: string },
 ): Promise<void> {
+  const problem = inbodyUploadProblem(input, input.today)
+  if (problem) throw new InbodyUploadError(problem)
+
   const path = `${userId}/${input.date}-${crypto.randomUUID()}.${EXTENSIONS[input.file.type] ?? 'bin'}`
-  const upload = await supabase.storage
-    .from(INBODY_BUCKET)
-    .upload(path, input.file, { contentType: input.file.type, upsert: false })
+  const bucket = supabase.storage.from(INBODY_BUCKET)
+  const upload = await bucket.upload(path, input.file, {
+    contentType: input.file.type,
+    upsert: false,
+  })
   if (upload.error) throw upload.error
   const { error } = await supabase.from('inbody_reports').insert({
     user_id: userId,
@@ -343,7 +383,11 @@ export async function uploadInbodyReport(
     file_path: path,
     file_type: input.file.type,
   })
-  if (error) throw error
+  if (error) {
+    // Best effort; the original error is what the user needs to see.
+    await bucket.remove([path]).catch(() => undefined)
+    throw error
+  }
 }
 
 /** A short-lived link to the user's own report file. */

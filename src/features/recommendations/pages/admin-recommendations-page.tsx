@@ -296,7 +296,13 @@ export function AdminRecommendationsPage() {
 
       <Section
         title="History"
-        meta={attempts.data ? `${formatNumber(attempts.data.total)} attempts` : undefined}
+        meta={
+          attempts.isPlaceholderData
+            ? 'Updating…'
+            : attempts.data
+              ? `${formatNumber(attempts.data.total)} attempts`
+              : undefined
+        }
       >
         {attempts.isError ? (
           <SectionError title="History unavailable" onRetry={() => void attempts.refetch()} />
@@ -305,7 +311,10 @@ export function AdminRecommendationsPage() {
         ) : attempts.data.rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No processing attempts yet.</p>
         ) : (
-          <>
+          <div
+            aria-busy={attempts.isPlaceholderData || undefined}
+            className="flex flex-col gap-5 transition-opacity aria-busy:opacity-60"
+          >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1080px] text-sm">
                 <caption className="sr-only">Processing attempts, newest first</caption>
@@ -398,7 +407,7 @@ export function AdminRecommendationsPage() {
                 Next
               </Button>
             </div>
-          </>
+          </div>
         )}
       </Section>
 

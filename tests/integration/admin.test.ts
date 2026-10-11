@@ -259,7 +259,7 @@ describe('Admin management', () => {
       await applyCorrection(admin, correction, null)
       await expectCode(
         applyCorrection(superAdmin, { ...correction, durationMinutes: 55 }, null),
-        '40001',
+        'PT409',
       )
       const after = await fetchDayRecords(admin, userId, yesterday)
       expect(after.workouts[0]?.durationMinutes).toBe(50)

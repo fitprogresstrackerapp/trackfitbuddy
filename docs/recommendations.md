@@ -362,8 +362,9 @@ accepted.
   request still needs a real key in a staging project.
 - The Edge Function imports the shared engine from `src/`, which is outside
   `supabase/functions/`. `npm run functions:bundle` bundles it with the same bundler as
-  `supabase functions deploy`, and runs the bundle with no project source. A deploy to
-  a hosted project has not happened yet.
+  `supabase functions deploy`, and runs the bundle with no project source. The function
+  is deployed and active on the hosted project (see
+  [deployment.md](./deployment.md#verification-status)).
 - Token estimates before the call are conservative (3 characters per token). Pricing is
   maintained manually; the INR prices assume an exchange rate.
 - Snapshots are written 62 days ahead. A user not reprocessed for longer has later days

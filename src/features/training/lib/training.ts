@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// Relative imports with extensions: this module is also bundled into the
+// process-recommendations Edge Function (Deno), which has no "@/" alias.
+import { isNetworkError, NETWORK_ERROR_MESSAGE } from '../../../lib/errors/network-error.ts'
 import type {
   CalorieRates,
   GuidanceSession,
@@ -181,12 +184,7 @@ const KNOWN_ERRORS: readonly [RegExp, string][] = [
  * get `fallback`, which names the action.
  */
 export function friendlyTrainingError(error: unknown, fallback: string): string {
-  if (
-    error instanceof TypeError ||
-    (error instanceof Error && /fetch|network/i.test(error.message))
-  ) {
-    return 'Couldn’t reach the server. Check your connection and try again.'
-  }
+  if (isNetworkError(error)) return NETWORK_ERROR_MESSAGE
   if (error && typeof error === 'object') {
     const { code, message } = error as { code?: unknown; message?: unknown }
     if (typeof message === 'string') {

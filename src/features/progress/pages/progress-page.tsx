@@ -84,6 +84,10 @@ export function ProgressPage() {
     )
   }
 
+  // A range that is not cached yet is loading: its sections show skeletons, not
+  // the previous range's numbers.
+  const rangeLoading = [nutrition, training, body, steps].some((query) => query.isPending)
+
   // Sections keep their priority order, except that a Body section without
   // any measurements moves below the sections that do have data (spec §40).
   const bodySection = <BodyProgress key="body" query={body} />
@@ -124,6 +128,9 @@ export function ProgressPage() {
         body={cycleBody}
         today={today}
       />
+      <p role="status" className="sr-only">
+        {rangeLoading ? `Loading ${range} data` : ''}
+      </p>
       {sections}
     </Page>
   )
