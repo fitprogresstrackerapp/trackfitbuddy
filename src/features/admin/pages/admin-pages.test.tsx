@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, configure, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import '@/test/mock-home-data'
@@ -40,6 +40,10 @@ vi.mock('../api/admin-data', async (importOriginal) => {
     createUser: vi.fn(),
   }
 })
+
+// The first test of each group cold-loads the lazy admin route; under a full
+// parallel run that can exceed the 1 s default wait.
+configure({ asyncUtilTimeout: 5000 })
 
 const USER_ID = '00000000-0000-0000-0000-00000000d001'
 

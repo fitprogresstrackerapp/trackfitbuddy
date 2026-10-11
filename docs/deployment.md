@@ -37,9 +37,11 @@ Browser ──▶ Vercel (static React/Vite build, vercel.json rules)
 Only the two `VITE_` variables ever reach the browser. The following guards enforce
 that:
 
-- **Build guard:** `vite.config.ts` stops the build if any other `VITE_` variable
-  exists, or if a public variable holds a secret-looking value (service-role JWT,
-  `sb_secret_…`, `sk-…`, connection string). The logic lives in
+- **Build guard:** `vite.config.ts` stops the build if a `VITE_` variable has a
+  secret-looking name (`SECRET`, `SERVICE`, `TOKEN`, `ANTHROPIC`…) or any `VITE_`
+  variable holds a secret-looking value (service-role JWT, `sb_secret_…`, `sk-…`,
+  connection string). Vercel's own `VITE_VERCEL_*` system variables are allowed:
+  they hold deployment metadata, and the app never reads them. The logic lives in
   `scripts/lib/public-env-guard.ts`.
 - **Bundle scan:** `npm run check:bundle` scans every file in `dist/`. It looks for:
   - key patterns: service-role JWTs, `sb_secret_`, `sk-ant-`/`sk-` keys and

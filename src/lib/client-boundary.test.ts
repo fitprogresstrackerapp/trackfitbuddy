@@ -31,6 +31,7 @@ const FORBIDDEN: [RegExp, string][] = [
     /import\.meta\.env\.(?!VITE_SUPABASE_URL|VITE_SUPABASE_ANON_KEY|DEV\b|PROD\b|MODE\b)\w+/,
     'a non-public env value',
   ],
+  [/import\.meta\.env(?![.\w])/, 'the whole env object (Vite would inline every VITE_ variable)'],
   [/from ['"][./]*(?:\.\.\/)+(?:supabase|scripts|tests)\//, 'server/tooling/test modules'],
   [/from ['"]@anthropic-ai\/sdk['"]/, 'the AI provider SDK'],
 ]

@@ -29,7 +29,12 @@ let cached: PublicEnv | undefined
 export function getPublicEnv(): PublicEnv {
   if (cached) return cached
 
-  const result = publicEnvSchema.safeParse(import.meta.env)
+  // Named reads only: handing Vite's whole env object to a function would make
+  // Vite inline every VITE_ variable of the build environment into the bundle.
+  const result = publicEnvSchema.safeParse({
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  })
   if (!result.success) {
     throw new EnvConfigError(result.error.issues.map((issue) => issue.message))
   }

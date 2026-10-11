@@ -3,6 +3,8 @@
  * Used by scripts/check-bundle.ts; unit-tested in bundle-scan.test.ts.
  */
 
+import { PUBLIC_ENV_KEYS } from './public-env-guard.ts'
+
 const JWT = /eyJ[A-Za-z0-9_-]+\.(eyJ[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g
 
 /** Names of server-only variables and header names of provider credentials. */
@@ -26,6 +28,7 @@ const SERVER_CODE = [
   { marker: 'auth.admin.createUser', what: 'service-role provisioning code' },
 ]
 
+const PUBLIC_NAMES = new Set<string>(PUBLIC_ENV_KEYS)
 const SECRET_API_KEY = /sb_secret_[A-Za-z0-9_-]{16,}/ // supabase-js contains the bare prefix
 const AI_API_KEY = /sk-(ant-)?[A-Za-z0-9_-]{32,}/
 const CONNECTION_STRING = /postgres(ql)?:\/\/[^\s"'`]*:[^\s"'`@]+@/
@@ -65,6 +68,12 @@ export function scanBundleText(file: string, text: string, secretValues: string[
     const role = match[1] ? jwtRole(match[1]) : null
     if (role && role !== 'anon') findings.push(`${file}: contains a JWT with role "${role}"`)
   }
+  // A VITE_ name in the output means the whole env object was inlined (every
+  // build variable ships), or the app reads a variable it should not.
+  const envNames = new Set(
+    [...text.matchAll(/\bVITE_[A-Z0-9_]+/g)].map((m) => m[0]).filter((n) => !PUBLIC_NAMES.has(n)),
+  )
+  for (const name of envNames) findings.push(`${file}: contains the build variable ${name}`)
   return findings
 }
 

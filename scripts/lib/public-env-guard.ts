@@ -1,8 +1,8 @@
 /**
  * Browser-safe configuration: the only VITE_ variables the app may read. Vite
  * inlines every referenced `import.meta.env.VITE_*` value into the public
- * bundle, so anything else — above all a server secret given a VITE_ name by
- * mistake — must stop the build.
+ * bundle, so a server secret given a VITE_ name by mistake, or a secret value
+ * in a public variable, must stop the build.
  */
 export const PUBLIC_ENV_KEYS = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'] as const
 
@@ -28,9 +28,11 @@ export function publicEnvProblems(env: Record<string, string | undefined>): stri
   const problems: string[] = []
   for (const [key, value = ''] of Object.entries(env)) {
     if (!key.startsWith('VITE_')) continue
-    if (!(PUBLIC_ENV_KEYS as readonly string[]).includes(key)) {
-      if (SECRET_NAME.test(key)) problems.push(`${key} looks like a server secret`)
-      else problems.push(`${key} is not a known public variable`)
+    // Other VITE_ variables (e.g. Vercel's own VITE_VERCEL_* system variables) are
+    // harmless metadata: Vite inlines only what the app reads, and the app reads
+    // only PUBLIC_ENV_KEYS (src/lib/client-boundary.test.ts). Secrets are not.
+    if (!(PUBLIC_ENV_KEYS as readonly string[]).includes(key) && SECRET_NAME.test(key)) {
+      problems.push(`${key} looks like a server secret`)
       continue
     }
     if (SECRET_VALUE.test(value)) problems.push(`${key} contains a secret-looking value`)
