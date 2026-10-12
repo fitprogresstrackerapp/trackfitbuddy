@@ -8,7 +8,6 @@ Status words used below:
 
 - **PASS**: works as specified and is covered by automated tests.
 - **PASS (limited)**: usable, with the limitation stated.
-- **NOT CONFIGURED**: built and tested, switched off until the operator configures it.
 - **NOT BUILT**: in the specification, not in this release.
 
 ## Ready to use
@@ -18,15 +17,16 @@ Progress, Profile and goals, Groups, and the admin tools for users, corrections 
 audit. All of it is enforced on the server (row-level security and server functions),
 not only in the screens.
 
-## Switched off on purpose
+## AI recommendations
 
-- **AI recommendations (NOT CONFIGURED).** The monthly recommendation engine, the Claude
-  provider, budget control, review and locking are built and tested with a mock
-  provider, and the real provider's request and response handling is verified without a
-  paid call. Production has no provider key and no budget, so processing cannot start.
-  Until it is enabled, users see "No recommendation available", Home and Progress show no
-  targets, and nothing is invented. Enabling it:
-  [deployment.md → Enabling AI recommendations](./deployment.md#enabling-ai-recommendations).
+Enabled on 12 Oct 2026 with Claude Haiku 5.5 (`claude-haiku-5-5`) and a deliberately
+small monthly budget of ₹84 (about USD 1). One test user was processed live: success on
+the first request, at an estimated cost of ₹0.09. Processing stays manual: an admin
+starts it, for selected users or for all ready users, and it stops at the budget.
+
+A user without a recommendation sees "No recommendation available"; Home and Progress
+show no targets, and nothing is invented. Configuration, cost and how to change the
+model or the budget: [deployment.md → AI configuration](./deployment.md#ai-configuration).
 
 ## Feature status
 
@@ -96,27 +96,28 @@ not only in the screens.
 
 ### Profile
 
-| Item                                      | Status         | Notes                                                                            |
-| ----------------------------------------- | -------------- | -------------------------------------------------------------------------------- |
-| Personal data, lifestyle, goals, capacity | PASS           | Goal changes apply to the next cycle                                             |
-| Weight and steps                          | PASS           | History kept; the latest steps entry is the day's value                          |
-| InBody upload                             | PASS (limited) | The file is stored privately. Results are entered by the operator, not extracted |
-| Current recommendation, feedback          | PASS           | Shown once a recommendation exists                                               |
-| Account, completeness                     | PASS           |                                                                                  |
+| Item                                      | Status         | Notes                                                                                               |
+| ----------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| Personal data, lifestyle, goals, capacity | PASS           | Goal changes apply to the next cycle                                                                |
+| Weight and steps                          | PASS           | History kept; the latest steps entry is the day's value                                             |
+| InBody upload                             | PASS           | The file is stored privately; it is never read (no OCR)                                             |
+| InBody CSV import                         | PASS (limited) | Results from the InBody app CSV, reviewed and confirmed by the user. Not yet deployed to production |
+| Current recommendation, feedback          | PASS           | Shown once a recommendation exists                                                                  |
+| Account, completeness                     | PASS           |                                                                                                     |
 
 ### Recommendations
 
-| Item                                                   | Status         | Notes                                                 |
-| ------------------------------------------------------ | -------------- | ----------------------------------------------------- |
-| Feedback window                                        | PASS           | From the 1st until processing, in the user's timezone |
-| Processing, structured output, validation              | PASS           | Tested with the mock provider                         |
-| Review window, editing allowed fields, accept and lock | PASS           | Two calendar days; the AI's original values are kept  |
-| Failure isolation, retry, reprocess                    | PASS           | One failure never stops the others                    |
-| Budget controls                                        | PASS           | Enforced on the server before every user              |
-| Previous recommendation preserved                      | PASS           |                                                       |
-| Real provider (Claude)                                 | NOT CONFIGURED | No key, no budget; no live request has been made      |
-| Automatic monthly processing                           | NOT BUILT      | An admin starts processing by hand                    |
-| Budget and settings screen                             | NOT BUILT      | Set in the SQL editor (deployment.md)                 |
+| Item                                                   | Status    | Notes                                                 |
+| ------------------------------------------------------ | --------- | ----------------------------------------------------- |
+| Feedback window                                        | PASS      | From the 1st until processing, in the user's timezone |
+| Processing, structured output, validation              | PASS      | Tested with the mock provider                         |
+| Review window, editing allowed fields, accept and lock | PASS      | Two calendar days; the AI's original values are kept  |
+| Failure isolation, retry, reprocess                    | PASS      | One failure never stops the others                    |
+| Budget controls                                        | PASS      | Enforced on the server before every user              |
+| Previous recommendation preserved                      | PASS      |                                                       |
+| Real provider (Claude)                                 | PASS      | Claude Haiku 5.5; one live recommendation verified    |
+| Automatic monthly processing                           | NOT BUILT | An admin starts processing by hand                    |
+| Budget and settings screen                             | NOT BUILT | Set in the SQL editor (deployment.md)                 |
 
 ### Groups
 
@@ -155,8 +156,10 @@ not only in the screens.
   usage or system settings. The operator uses the SQL statements in deployment.md.
 - **Food values are approximate.** The starter catalogue is a reviewed list of typical
   values, not a nutrition database.
-- **InBody results are entered by hand.** There is no extraction from the file, and the
-  admin screens cannot open the file.
+- **InBody results come from the InBody app's CSV export** (kg units, one measurement
+  per import). A PDF or image report is stored but never read (no OCR), and the admin
+  screens cannot open the file. A user without a CSV needs the operator to enter the
+  values.
 - **User-submitted foods stay private**; there is no approval or merge screen.
 - **Recommendation processing is manual**, once a month, started by an admin.
 - **Users cannot change their own PIN.**

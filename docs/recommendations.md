@@ -58,20 +58,20 @@ produces `RecommendationInput` (`recommendation-input-v1`, strict Zod schema). E
 number is computed with the **same functions Progress uses**, so Progress and the AI
 always agree:
 
-| Metric                     | Rule (shared function)                                                                                                                                                                   |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Window                     | Previous cycle start → the day before processing (at most 366 days). First recommendation: the last 28 completed days (`recent_data`).                                                   |
-| Nutrition averages         | Tracked, completed days only (`summarizeNutrition`); the processing day is never counted.                                                                                                |
-| Nutrition adherence        | Days meeting **that day's snapshot** target (with its tolerance) / eligible tracked days. Never average intake / average target.                                                         |
-| Workouts                   | Distinct workout days (`countWorkoutDays`); Monday–Sunday full weeks only; transition and running weeks excluded; `min(done, capacity)` per week (`weeklyTraining`, `workoutAdherence`). |
-| Activities                 | Sessions, days, minutes, stored calories and types (`entryTotals`). They are never counted as workouts.                                                                                  |
-| Steps                      | Average of days with an active entry (`stepsSummary`). A missing day is not zero, and no step target is invented.                                                                        |
-| Weight / body fat / muscle | First → last observed value in the window (`weightSeries` with InBody precedence, `compositionSeries`, `change`). Never interpolated.                                                    |
-| InBody                     | Latest report with metrics dated on or before the processing date. Otherwise `null`. Reports and images are never sent.                                                                  |
-| Goal                       | The active goal version, which the new cycle will lock. A goal changed for the next cycle is used here, while the previous cycle keeps its own.                                          |
-| Capacity                   | The profile preference, for the new cycle. The previous cycle is summarised against its own locked capacity.                                                                             |
-| Previous recommendation    | Final targets (after user edits), whether they were edited, template names and types, focus and summary. It never includes raw AI history.                                               |
-| Feedback                   | This month's check-in. It is frozen at claim time (see Feedback).                                                                                                                        |
+| Metric                     | Rule (shared function)                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Window                     | Previous cycle start → the day before processing (at most 366 days). First recommendation: the last 28 completed days (`recent_data`).                                                                                                                                                                                                                                            |
+| Nutrition averages         | Tracked, completed days only (`summarizeNutrition`); the processing day is never counted.                                                                                                                                                                                                                                                                                         |
+| Nutrition adherence        | Days meeting **that day's snapshot** target (with its tolerance) / eligible tracked days. Never average intake / average target.                                                                                                                                                                                                                                                  |
+| Workouts                   | Distinct workout days (`countWorkoutDays`); Monday–Sunday full weeks only; transition and running weeks excluded; `min(done, capacity)` per week (`weeklyTraining`, `workoutAdherence`).                                                                                                                                                                                          |
+| Activities                 | Sessions, days, minutes, stored calories and types (`entryTotals`). They are never counted as workouts.                                                                                                                                                                                                                                                                           |
+| Steps                      | Average of days with an active entry (`stepsSummary`). A missing day is not zero, and no step target is invented.                                                                                                                                                                                                                                                                 |
+| Weight / body fat / muscle | First → last observed value in the window (`weightSeries` with InBody precedence, `compositionSeries`, `change`). Never interpolated.                                                                                                                                                                                                                                             |
+| InBody                     | Latest report with metrics dated on or before the processing date: `date`, `weight_kg`, `body_fat_percent`, `muscle_mass_kg`. Otherwise `null`. Results imported from an InBody CSV are included like any other. BMI, BMR and the additional CSV values are not part of the input. Reports, images, the CSV file, its text, headers, file names and storage paths are never sent. |
+| Goal                       | The active goal version, which the new cycle will lock. A goal changed for the next cycle is used here, while the previous cycle keeps its own.                                                                                                                                                                                                                                   |
+| Capacity                   | The profile preference, for the new cycle. The previous cycle is summarised against its own locked capacity.                                                                                                                                                                                                                                                                      |
+| Previous recommendation    | Final targets (after user edits), whether they were edited, template names and types, focus and summary. It never includes raw AI history.                                                                                                                                                                                                                                        |
+| Feedback                   | This month's check-in. It is frozen at claim time (see Feedback).                                                                                                                                                                                                                                                                                                                 |
 
 `null` always means missing. The AI never calculates adherence, averages or changes.
 
@@ -112,7 +112,9 @@ interface AIRecommendationProvider {
   - server-side refusal fallbacks (`fallbacks: "default"`); the model that actually
     answered is recorded;
   - SDK retries are off, because the processor retries;
-  - the default model is `claude-opus-5`.
+  - the default model in code is `claude-opus-5`; it applies only when `ai_model` is
+    unset. Production sets `ai_model` to `claude-haiku-5-5`, which has no server-side
+    fallback: a declined request stays declined (see deployment.md).
 - **Selection:**
   - `system_settings.ai_provider` / `ai_model` decide in production;
   - the Edge Function env var `AI_PROVIDER` (and optional `AI_MODEL`) overrides them;
@@ -358,8 +360,8 @@ accepted.
   request, and the admin page continues automatically while it is open.
 - The Claude provider is not exercised by the automated tests, which must never call a
   real AI. Its request and response handling was verified against a local imitation of
-  the Messages API (see [deployment.md](./deployment.md#ai-configuration)). A live
-  request still needs a real key in a staging project.
+  the Messages API (see [deployment.md](./deployment.md#ai-configuration)). One live
+  recommendation was processed on production with `claude-haiku-5-5` on 12 Oct 2026.
 - The Edge Function imports the shared engine from `src/`, which is outside
   `supabase/functions/`. `npm run functions:bundle` bundles it with the same bundler as
   `supabase functions deploy`, and runs the bundle with no project source. The function

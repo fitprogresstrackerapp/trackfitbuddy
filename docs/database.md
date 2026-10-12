@@ -24,6 +24,7 @@ The PostgreSQL / Supabase data model, and the security model built on it. The SQ
 | `20261006000100_groups_feature.sql`            | Groups: create/preview/join/leave/remove/role functions, roster and my-groups reads, rebuilt `get_group_member_day` (targets by date, history rule), admin continuity, group audit, `is_group_admin` never NULL                                                                                                                      |
 | `20261007000100_admin_management.sql`          | Admin management: authority helpers, domain-specific corrections (`admin_correct_*`, `admin_delete_record`) with version checks, `admin_set_user_active`, `admin_reset_pin` (service role), admin readers (`admin_list_users`, `admin_user_account`, `admin_audit_log`, `admin_dashboard`), `ADMIN_CORRECTION` audit action override |
 | `20261011000100_inbody_orphan_cleanup.sql`     | `inbody_files_delete_unreferenced` storage policy: a user may delete a file in their own `inbody-reports` folder only while no report row references it (cleanup after a refused upload)                                                                                                                                             |
+| `20261013000100_inbody_csv_import.sql`         | InBody CSV import: `import_inbody_metrics` (service role only; stores one parsed measurement for the verified user, never overwrites results), `text/csv` allowed as a report file type and in the `inbody-reports` bucket                                                                                                           |
 | `20261011000200_stale_correction_conflict.sql` | A stale admin correction now raises `PT409` (HTTP 409) instead of SQLSTATE 40001, which PostgREST retries as a transient error (the request hung)                                                                                                                                                                                    |
 
 ### Workflow
@@ -142,7 +143,7 @@ All group actions are server functions; see [`docs/groups.md`](./groups.md).
 ### Service-role boundary
 
 The service role bypasses RLS. It exists only in trusted server code (Edge Functions:
-user creation, PIN reset, recommendation processing, InBody extraction, admin
+user creation, PIN reset, recommendation processing, InBody CSV import, admin
 corrections) and must **never** reach the browser or a `VITE_` variable. Server code
 acting for an admin sets `set_config('app.actor_id', <admin id>, true)` so audit rows name
 the real actor. A JWT user can't override `app.actor_id`.

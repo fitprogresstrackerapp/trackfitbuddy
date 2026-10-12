@@ -1,5 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query'
-import { ExternalLink, Upload } from 'lucide-react'
+import { ExternalLink, FileSpreadsheet, Upload } from 'lucide-react'
 import { useState, type SubmitEvent } from 'react'
 
 import { FormField } from '@/components/common/form-field'
@@ -15,6 +15,7 @@ import { notify } from '@/lib/feedback'
 import { formatNumber } from '@/lib/format'
 import { getSupabaseClient } from '@/lib/supabase/client'
 
+import { parseInbodyCsvFile } from '../api/inbody-import'
 import {
   INBODY_FILE_TYPES,
   INBODY_MAX_BYTES,
@@ -25,6 +26,7 @@ import {
 } from '../api/profile-data'
 import type { useProfileMutations } from '../api/profile-queries'
 import { friendlyProfileError } from '../lib/profile-logic'
+import { InbodyImportForm } from './inbody-import-form'
 import { EditSheet } from './profile-ui'
 
 const STATUS: Record<InbodyReport['status'], { status: Status; label: string }> = {
@@ -41,27 +43,42 @@ interface InbodySectionProps {
 }
 
 /**
- * InBody (spec §21): the original report is stored; structured metrics are
- * added later by processing or an admin — nothing is read from the file here.
+ * InBody (spec §21): the original report (PDF or image) is stored as it is;
+ * nothing is read from it. Results come from the CSV the InBody app exports,
+ * which the server parses and the user confirms, or from an admin.
  * Only stored metrics are shown. A new upload is always a new record.
  */
 export function InbodySection({ reports, today, mutations }: InbodySectionProps) {
   const [open, setOpen] = useState(false)
+  // The CSV import: for one report awaiting results, or without one.
+  const [importing, setImporting] = useState<{ report: InbodyReport | null } | null>(null)
 
   return (
     <Section
       title="InBody"
       action={
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setOpen(true)
-          }}
-        >
-          <Upload aria-hidden="true" />
-          Upload report
-        </Button>
+        <div className="flex flex-wrap justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setImporting({ report: null })
+            }}
+          >
+            <FileSpreadsheet aria-hidden="true" />
+            Import CSV
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setOpen(true)
+            }}
+          >
+            <Upload aria-hidden="true" />
+            Upload report
+          </Button>
+        </div>
       }
     >
       {reports.isError ? (
@@ -70,7 +87,8 @@ export function InbodySection({ reports, today, mutations }: InbodySectionProps)
         <Skeleton className="h-20 w-full" />
       ) : reports.data.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No InBody reports yet. InBody is optional; upload one whenever you have a scan.
+          No InBody reports yet. InBody is optional; upload a report or import the CSV from the
+          InBody app whenever you have a scan.
         </p>
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border">
@@ -81,7 +99,21 @@ export function InbodySection({ reports, today, mutations }: InbodySectionProps)
                 <StatusBadge {...STATUS[report.status]} />
                 <ViewReport path={report.filePath} />
               </div>
-              {report.metrics && <Metrics metrics={report.metrics} />}
+              {report.metrics ? (
+                <Metrics metrics={report.metrics} />
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="self-start"
+                  onClick={() => {
+                    setImporting({ report })
+                  }}
+                >
+                  <FileSpreadsheet aria-hidden="true" />
+                  Import CSV results
+                </Button>
+              )}
             </li>
           ))}
         </ul>
@@ -92,7 +124,7 @@ export function InbodySection({ reports, today, mutations }: InbodySectionProps)
         onOpenChange={setOpen}
         eyebrow="InBody"
         title="Upload InBody report"
-        description="The file is stored privately. Results are added once the report has been reviewed."
+        description="The file is stored privately. To add the results, import the CSV from the InBody app."
       >
         <UploadForm
           today={today}
@@ -104,6 +136,33 @@ export function InbodySection({ reports, today, mutations }: InbodySectionProps)
             }
             setOpen(false)
             notify.success('Report uploaded', formatDayLabel(input.date))
+          }}
+        />
+      </EditSheet>
+
+      <EditSheet
+        open={importing !== null}
+        onOpenChange={(next) => {
+          if (!next) setImporting(null)
+        }}
+        eyebrow="InBody"
+        title="Import InBody CSV"
+        description={
+          importing?.report
+            ? `Results for your report dated ${formatDayLabel(importing.report.date)}.`
+            : 'Import the CSV exported from the InBody app.'
+        }
+      >
+        <InbodyImportForm
+          report={importing?.report ?? null}
+          onParse={(file) => parseInbodyCsvFile(getSupabaseClient(), file)}
+          onSave={async (input) => {
+            const saved = await mutations.inbodyImport.mutateAsync(input)
+            setImporting(null)
+            notify.success(
+              'InBody results imported successfully.',
+              formatDayLabel(saved.reportDate),
+            )
           }}
         />
       </EditSheet>

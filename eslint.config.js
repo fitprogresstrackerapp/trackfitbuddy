@@ -15,6 +15,7 @@ export default defineConfig([
     'supabase/functions/pin-login',
     'supabase/functions/process-recommendations',
     'supabase/functions/admin-users',
+    'supabase/functions/inbody-import',
   ]),
   {
     files: ['**/*.{ts,tsx}'],

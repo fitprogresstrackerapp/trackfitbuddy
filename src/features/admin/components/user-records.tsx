@@ -374,7 +374,7 @@ export function BodySection({ userId, canAdminister }: { userId: string; canAdmi
                           ]
                             .filter(Boolean)
                             .join(' · ') || 'Metrics recorded'
-                        : 'Awaiting results (no metrics to correct)'
+                        : 'Awaiting results: the user can import their InBody CSV in Profile'
                     }
                     canAdminister={canAdminister && report.metrics !== null}
                     correctLabel={`Correct InBody ${formatShortDate(report.date)}`}

@@ -35,6 +35,7 @@ const UNAUTHENTICATED: Record<string, { body: unknown; status: number }> = {
   'pin-login': { body: {}, status: 400 },
   'admin-users': { body: { action: 'reset_pin' }, status: 401 },
   'process-recommendations': { body: { action: 'continue' }, status: 401 },
+  'inbody-import': { body: { action: 'parse' }, status: 401 },
 }
 
 async function waitForServer(url: string): Promise<void> {

@@ -10,8 +10,11 @@ import {
   saveMonthlyFeedback,
 } from '@/features/recommendations/api/recommendation-data'
 import type * as RecommendationData from '@/features/recommendations/api/recommendation-data'
+import { notify } from '@/lib/feedback'
 import { makeAccount, renderApp, signedIn } from '@/test/auth-harness'
 
+import { parseInbodyCsvFile, saveInbodyCsv } from '../api/inbody-import'
+import type * as InbodyImport from '../api/inbody-import'
 import {
   fetchInbodyReports,
   fetchPlan,
@@ -55,6 +58,10 @@ vi.mock('../api/profile-data', async (importOriginal) => {
     reviewRecommendation: vi.fn(),
     acceptRecommendation: vi.fn(),
   }
+})
+vi.mock('../api/inbody-import', async (importOriginal) => {
+  const actual = await importOriginal<typeof InbodyImport>()
+  return { ...actual, parseInbodyCsvFile: vi.fn(), saveInbodyCsv: vi.fn() }
 })
 vi.mock('@/features/recommendations/api/recommendation-data', async (importOriginal) => {
   const actual = await importOriginal<typeof RecommendationData>()
@@ -413,6 +420,107 @@ describe('Body and steps', () => {
     expect(inbody.textContent).toContain('32.1 kg')
     expect(inbody.textContent).not.toContain('BMI')
     expect(inbody.textContent).toContain('Awaiting results')
+  })
+
+  it('InBody: CSV import is offered in the section and on a report awaiting results', async () => {
+    await openProfile()
+    expect(within(section('InBody')).getByRole('button', { name: 'Import CSV' })).toBeTruthy()
+    expect(
+      within(section('InBody')).queryByRole('button', { name: 'Import CSV results' }),
+    ).toBeNull()
+    cleanup()
+    vi.mocked(fetchInbodyReports).mockResolvedValue([
+      {
+        id: 'r1',
+        date: '2026-09-02',
+        status: 'COMPLETED',
+        filePath: 'u/r1.pdf',
+        fileType: 'application/pdf',
+        metrics: {
+          weightKg: 75.2,
+          bodyFatPercent: 22.4,
+          muscleMassKg: 32.1,
+          bmi: null,
+          bmrKcal: null,
+        },
+      },
+      {
+        id: 'r2',
+        date: '2026-09-20',
+        status: 'PENDING',
+        filePath: 'u/r2.pdf',
+        fileType: 'application/pdf',
+        metrics: null,
+      },
+    ])
+    await openProfile()
+    // Only the report without results can take an import; stored results have no edit action.
+    expect(
+      within(section('InBody')).getAllByRole('button', { name: 'Import CSV results' }),
+    ).toHaveLength(1)
+    expect(within(section('InBody')).getByRole('button', { name: 'Upload report' })).toBeTruthy()
+  })
+
+  it('InBody: importing a CSV into a report shows the review, saves once and refreshes', async () => {
+    vi.mocked(fetchInbodyReports).mockResolvedValue([
+      {
+        id: 'r2',
+        date: '2026-09-20',
+        status: 'PENDING',
+        filePath: 'u/r2.pdf',
+        fileType: 'application/pdf',
+        metrics: null,
+      },
+    ])
+    vi.mocked(parseInbodyCsvFile).mockResolvedValue([
+      {
+        measuredAt: '2026-09-20T07:30:15',
+        date: '2026-09-20',
+        weightKg: 81.5,
+        bodyFatPercent: 21,
+        muscleMassKg: 36.4,
+        bmi: 25.2,
+        bmrKcal: 1761,
+        other: [],
+        future: false,
+        hasResults: false,
+        reports: [{ id: 'r2', date: '2026-09-20', sameDate: true }],
+      },
+    ])
+    vi.mocked(saveInbodyCsv).mockResolvedValue({ reportDate: '2026-09-20' })
+    const success = vi.spyOn(notify, 'success')
+    await openProfile()
+    const sheet = await openSheet('InBody', /import csv results/i)
+    expect(sheet.textContent).toContain('Results for your report dated')
+    fireEvent.change(within(sheet).getByLabelText('InBody CSV file'), {
+      target: { files: [new File(['Date,Weight(kg),'], 'InBody.csv')] },
+    })
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Read CSV' }))
+    expect(
+      await within(sheet).findByText(
+        'These values were imported from your InBody CSV. Please review them before saving.',
+      ),
+    ).toBeTruthy()
+    expect(sheet.textContent).toContain('81.5 kg')
+    expect(saveInbodyCsv).not.toHaveBeenCalled()
+
+    const loadsBefore = vi.mocked(fetchInbodyReports).mock.calls.length
+    const weightsBefore = vi.mocked(fetchWeights).mock.calls.length
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Save results' }))
+    await waitFor(() => {
+      expect(saveInbodyCsv).toHaveBeenCalledWith(expect.anything(), {
+        file: { filename: 'InBody.csv', csv: expect.stringContaining('Weight(kg)') as string },
+        measuredAt: '2026-09-20T07:30:15',
+        reportId: 'r2',
+      })
+    })
+    await waitFor(() => {
+      expect(success).toHaveBeenCalledWith('InBody results imported successfully.', 'SUN 20 SEP')
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(vi.mocked(fetchInbodyReports).mock.calls.length).toBeGreaterThan(loadsBefore)
+      expect(vi.mocked(fetchWeights).mock.calls.length).toBeGreaterThan(weightsBefore)
+    })
+    expect(saveInbodyCsv).toHaveBeenCalledTimes(1)
   })
 })
 

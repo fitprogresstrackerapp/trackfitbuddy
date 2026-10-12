@@ -16,6 +16,7 @@ import type {
   StepsEntryInput,
   WeightEntryInput,
 } from '../schemas'
+import { saveInbodyCsv, type InbodyImportInput } from './inbody-import'
 import {
   acceptRecommendation,
   deleteSteps,
@@ -177,6 +178,13 @@ export function useProfileMutations(userId: string) {
       invalidate(profileKeys.inbody(userId), profileKeys.weights(userId), progressKeys.all(userId)),
   })
 
+  // Imported results add a weight to the history, like a logged weight.
+  const inbodyImport = useMutation({
+    mutationFn: (input: InbodyImportInput) => saveInbodyCsv(supabase, input),
+    onSuccess: () =>
+      Promise.all([afterWeight(), invalidate(profileKeys.inbody(userId), homeKeys.all(userId))]),
+  })
+
   const goal = useMutation({
     mutationFn: (input: GoalInput) => saveGoal(supabase, input),
     onSuccess: () => invalidate(profileKeys.planAll(userId), progressKeys.all(userId)),
@@ -212,6 +220,7 @@ export function useProfileMutations(userId: string) {
     addSteps,
     removeSteps,
     inbody,
+    inbodyImport,
     goal,
     review,
     accept,

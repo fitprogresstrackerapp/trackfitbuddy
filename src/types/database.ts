@@ -3165,6 +3165,21 @@ export type Database = {
           name: string
         }[]
       }
+      import_inbody_metrics: {
+        Args: {
+          p_bmi?: number
+          p_bmr_kcal?: number
+          p_body_fat_percent?: number
+          p_file_path?: string
+          p_measurement_date: string
+          p_muscle_mass_kg?: number
+          p_other: Json
+          p_report_id?: string
+          p_user_id: string
+          p_weight_kg?: number
+        }
+        Returns: Json
+      }
       join_group: { Args: { p_code: string }; Returns: string }
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
       log_activity: {

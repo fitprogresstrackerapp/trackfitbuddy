@@ -98,13 +98,82 @@ it was created with. Edits on Profile therefore apply to the **next** recommenda
     uploaded. If recording the report still fails, the file just uploaded is removed
     again. Storage lets a user delete only a file in their own folder that no report
     row references, so a file that belongs to a report can't be deleted by its owner.
-- **No extraction:** there is no OCR or AI extraction. New reports show "Awaiting results"
-  until structured metrics are added by later processing or an admin. Only stored metrics
-  are shown (weight, body fat, muscle mass, BMI, BMR).
+- **Nothing is read from the report file:** there is no OCR and no AI extraction of a
+  PDF or image. A new report shows "Awaiting results" until its results are imported
+  from the InBody CSV (below) or entered by an admin. Only stored metrics are shown
+  (weight, body fat, muscle mass, BMI, BMR).
 - **InBody weight:** the database writes it into weight history (source INBODY) via the
   existing trigger.
-- **History:** users cannot edit or delete reports. A new upload is always a new record.
+- **History:** users cannot edit or delete reports or stored results. A new upload is
+  always a new record.
 - **Local stack:** `npm run supabase:start` now includes the Storage API.
+
+### InBody CSV import
+
+A user can import the CSV that the InBody app exports ("Import CSV" in the InBody
+section, or "Import CSV results" on a report awaiting results). The uploaded PDF or
+image is unchanged; the CSV is an additional way to add the results.
+
+**Flow:** choose the file → the server parses and validates it → the values are shown
+for review → the user confirms → the result is stored → InBody, weight and Progress
+refresh. Nothing is stored before the confirmation.
+
+- **Server-side parsing:** the Edge Function `inbody-import` parses the CSV with a
+  deterministic parser (`src/features/profile/lib/inbody-csv.ts`, shared with the unit
+  tests). No AI model reads the file. The browser only checks the extension, the size
+  and that the file is text, then sends the text.
+- **The browser never submits values:** saving sends the same file again with the
+  chosen measurement's timestamp, and the server reads the values from the file. A
+  browser cannot write `inbody_metrics` (RLS: admin only) and cannot call the save
+  function (`import_inbody_metrics`, service role only).
+- **Supported format:** the InBody app export. Comma-separated, UTF-8 (a byte-order
+  mark is fine), one header row, one row per measurement. Columns are found by header
+  name, not by position. The date is 14 digits (`yyyymmddhhmmss`, device time, no
+  timezone conversion). `-` or an empty cell means "not measured" and is stored as
+  null, never as zero. Values must be plain decimals with a dot.
+- **Refused, never guessed:** another delimiter, weights in a unit other than kg, a
+  repeated column, a missing required column, an unreadable date, a non-numeric or
+  out-of-range value, two rows with the same timestamp, more than 500 rows or 256 KB.
+  One invalid row refuses the whole file.
+- **Stored in the existing model** (`inbody_metrics`, one result per report):
+
+  | CSV column                   | Stored as                 |
+  | ---------------------------- | ------------------------- |
+  | `Weight(kg)`                 | `weight_kg`               |
+  | `Percent Body Fat(%)`        | `body_fat_percent`        |
+  | `Skeletal Muscle Mass(kg)`   | `muscle_mass_kg`          |
+  | `BMI(kg/m²)`                 | `bmi`                     |
+  | `Basal Metabolic Rate(kcal)` | `bmr_kcal` (whole number) |
+
+  The ranges are those of the table's constraints. At least one of weight, body fat
+  and muscle mass is required. Some further whole-body values (body fat mass, soft
+  lean mass, total body water, protein, mineral, visceral fat level and area,
+  waist–hip ratio, SMI, InBody score) are kept in `other_metrics_json` as
+  `{source: "inbody_csv", measured_at, device, metrics: {<key>: {label, value, unit}}}`.
+  Segmental values are not stored.
+
+- **Which report the result belongs to:**
+  - a report awaiting results with the **same date** → the result is added to it;
+  - a report awaiting results dated **one day off** → offered, and the user chooses
+    between that report and a separate record; the report then takes the measurement's
+    date;
+  - **no matching report** → the CSV becomes a report record of its own. It is never
+    attached to a report of another date or to another user's report;
+  - started from a specific report whose date doesn't match → refused ("This CSV does
+    not match the selected report").
+- **Re-import:** existing results are never overwritten. A report that has results, or
+  a date that already has a result, is refused with an explanation. Corrections stay
+  with admins (Admin → Users → the user → InBody → Admin correction).
+- **A CSV with several measurements:** the user picks one; one measurement is saved
+  per import.
+- **Is the CSV stored?** Only when it becomes a record of its own: it is then that
+  record's file, in the user's private folder (`text/csv` is allowed for this). When
+  the result is added to an uploaded report, the CSV is discarded with the request.
+- **Afterwards:** the report is `COMPLETED`, the existing trigger adds the weight to
+  weight history (source INBODY), and the result is part of the next AI
+  recommendation input (see [recommendations.md](./recommendations.md)).
+- **Privacy:** a user imports only into their own account; managers and group members
+  gain nothing. The function logs neither the CSV nor any value.
 
 ## Current plan and recommendation review
 
@@ -159,7 +228,8 @@ it was created with. Edits on Profile therefore apply to the **next** recommenda
   - personal and height → account, Home;
   - weight → weights, account readiness, Progress;
   - steps → steps, Home, Progress;
-  - InBody → InBody, weights, Progress;
+  - InBody upload → InBody, weights, Progress;
+  - InBody CSV import → InBody, weights, account readiness, Home, Progress;
   - goals → plan, Progress;
   - review → plan, Home, Progress, training plan, Food targets, recommendation history;
   - check-in → this month's check-in.
@@ -167,5 +237,5 @@ it was created with. Edits on Profile therefore apply to the **next** recommenda
 
 ## Not in this phase
 
-InBody OCR/extraction, PIN change, admin user and group management, and step goals or
+Reading results from an InBody PDF or image (OCR), PIN change, admin user and group management, and step goals or
 integrations. AI recommendation generation and monthly feedback now exist (Prompt 10).

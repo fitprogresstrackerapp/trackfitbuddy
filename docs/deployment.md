@@ -177,8 +177,8 @@ production project by accident: check the project ref at each step.
    - the `private` schema;
    - all tables, RLS policies, triggers and functions;
    - the `system_settings` defaults;
-   - the private `inbody-reports` bucket: 10 MB limit; PDF, JPEG, PNG, WebP or HEIC;
-     own-folder policies.
+   - the private `inbody-reports` bucket: 10 MB limit; PDF, JPEG, PNG, WebP, HEIC or
+     CSV (an imported InBody CSV); own-folder policies.
 
    There is no seed data (`seed.sql` is empty on purpose). Never edit an applied
    migration; add a new one.
@@ -201,17 +201,17 @@ production project by accident: check the project ref at each step.
    stable, because changing it invalidates every account's derived password.
 6. **Edge Functions:**
    ```bash
-   npx supabase functions deploy pin-login admin-users process-recommendations
+   npx supabase functions deploy pin-login admin-users process-recommendations inbody-import
    ```
    - **Bundling:** use the default Docker bundling. Docker must be running, and
      `--use-api` is not verified.
-   - **Shared code:** `process-recommendations` and `admin-users` import code from
+   - **Shared code:** `process-recommendations`, `admin-users` and `inbody-import` import code from
      `src/` and `scripts/lib/`. The CLI bundles those modules into each function.
      `npm run functions:bundle` proves this locally: it bundles each function with the
      same edge-runtime bundler, then boots each bundle in a container with **no project
      source** and checks CORS and unauthenticated handling.
    - **JWT verification:** `config.toml` sets `verify_jwt = false` for `pin-login` (its
-     callers aren't signed in yet); the other two verify the JWT at the gateway and
+     callers aren't signed in yet); the others verify the JWT at the gateway and
      again in code.
    - **CORS:** each function allows only the origins in `ALLOWED_ORIGINS`; there is no
      wildcard. The local stack's gateway adds `*` on top, but hosted Supabase does not.
@@ -230,10 +230,45 @@ production project by accident: check the project ref at each step.
 
 - **Settings.** AI processing is configured in `system_settings`, by the migrations and
   the admin screens:
-  - `ai_provider = "anthropic"`, `ai_model = "claude-opus-5"`;
+  - `ai_provider = "anthropic"`, `ai_model` (the migrations default it to
+    `"claude-opus-5"`; production is set to `"claude-haiku-5-5"`, see below);
   - `ai_prompt_version = "recommendation-v1"`;
   - `ai_pricing` (INR per million tokens, used for cost estimates and budget checks);
   - `ai_max_retries`, `ai_max_output_tokens`, `ai_request_timeout_seconds`.
+- **Production configuration** (set on 12 Oct 2026, in `system_settings`; no code or
+  deployment change was needed):
+
+  | Setting                | Value                                             | Why                                                                                     |
+  | ---------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------- |
+  | `ai_model`             | `"claude-haiku-5-5"`                              | Claude Haiku 5.5                                                                        |
+  | `ai_pricing`           | version `2026-10-12`; Haiku: 8.4 input, 42 output | USD 0.10 / 0.50 per million tokens (prompts up to 100k tokens) at an assumed 84 INR/USD |
+  | `ai_max_output_tokens` | `8000`                                            | Haiku 5.5 thinks by default and thinking counts toward the limit                        |
+  | `ai_monthly_budget`    | `84`                                              | About USD 1, for the first live tests                                                   |
+
+  The provider key is the function secret `ANTHROPIC_API_KEY`.
+
+- **Changing the model** is three statements. The model must have a price, or processing
+  refuses with `PRICING_NOT_CONFIGURED`; give the price list a new version each time:
+  ```sql
+  update public.system_settings set value_json = '"claude-haiku-5-5"'::jsonb where key = 'ai_model';
+
+  update public.system_settings
+  set value_json = jsonb_set(
+        jsonb_set(value_json, '{models,claude-haiku-5-5}',
+                  '{"input_per_million": 8.4, "output_per_million": 42}'::jsonb),
+        '{version}', '"2026-10-12"'::jsonb)
+  where key = 'ai_pricing';
+
+  update public.system_settings set value_json = '8000'::jsonb where key = 'ai_max_output_tokens';
+  ```
+- **Model notes (Claude Haiku 5.5):**
+  - It has no server-side refusal fallback. The provider still sends
+    `fallbacks: "default"`, which the API accepts; a declined request stays declined and
+    the attempt is marked Failed with the reason. Nothing is activated.
+  - Thinking is on by default and its tokens count toward `ai_max_output_tokens` and are
+    billed as output. A limit that is too low cuts the reply off, which is treated as a
+    failed attempt and retried once.
+  - It rejects `temperature`; the provider does not send it.
 - **Budget.** `ai_monthly_budget` is **null by default**, and processing refuses to
   start (`BUDGET_NOT_CONFIGURED`) until a budget is set. Keep `ai_pricing` in line with
   the provider's current prices.
@@ -265,7 +300,12 @@ production project by accident: check the project ref at each step.
   - a rate-limit failure and an invalid reply, each failing in isolation;
   - the key never being stored, returned or logged.
 
-  A live Claude request has **not** been made. See the checklist.
+- **Live verification (12 Oct 2026).** One test user was processed on production with
+  `claude-haiku-5-5`: one request, no retry, status Success, 3,337 input and 1,369
+  output tokens, estimated cost ₹0.0855 (about USD 0.001). The recommendation was
+  stored for review with all sections, four sessions for a capacity of four, and 62
+  daily target snapshots. Provider, model, prompt version and pricing version were
+  recorded on the attempt, the usage record and the cycle.
 
 ## Operating the MVP
 
@@ -319,8 +359,12 @@ creating their own custom foods.
 
 ### InBody results
 
-Users upload the report file; nothing reads the file. Until results are entered, the
-report shows "Awaiting results". To enter them:
+Users add their own results by importing the CSV exported from the InBody app
+(Profile → InBody → Import CSV; see [profile.md](./profile.md#inbody-csv-import)). The
+uploaded PDF or image itself is never read. A report without results shows "Awaiting
+results".
+
+For a user who has no CSV, an operator can still enter the values by hand:
 
 1. Open the file in the Supabase dashboard: Storage → `inbody-reports` → the folder
    named with the user's profile id. (The admin screens list reports but cannot open
@@ -351,8 +395,10 @@ AI processing is off until both a provider key and a budget exist. To turn it on
    function secret only; never put it in Vercel or a `VITE_` variable.
 2. **Budget:** set `ai_monthly_budget` with the SQL in "AI configuration" above. The
    amount is in INR and is checked against the estimated cost before every user.
-3. **Prices:** check that `ai_pricing` in `system_settings` matches the provider's current
-   prices for `claude-opus-5`; the budget check and cost figures use it.
+3. **Prices:** check that `ai_pricing` in `system_settings` has an entry for the model in
+   `ai_model` at the provider's current prices; the budget check and cost figures use
+   it. The app's figures are estimates in INR: the real charge is on the Anthropic
+   Console's Usage page.
 4. **First test:** sign in as an admin → Admin → Recommendations. A user is "Ready" when
    their profile is complete and they have a goal and a weekly workout capacity. Select
    **one test user** → **Process selected**.
@@ -473,8 +519,8 @@ production domain `https://trackfitbuddy.vercel.app`), checked read-only on 12 O
   `20261011000200_stale_correction_conflict` (the version check raises `PT409`);
 - all three Edge Functions are active; `verify_jwt` is off for `pin-login` and on for
   the other two; the hosted gateway adds no CORS headers of its own;
-- function secrets present: `PIN_AUTH_SECRET`, `ALLOWED_ORIGINS`. No provider key, and
-  `ai_monthly_budget` is not set: AI processing cannot start;
+- function secrets present: `PIN_AUTH_SECRET`, `ALLOWED_ORIGINS`, and since 12 Oct 2026
+  `ANTHROPIC_API_KEY`. AI processing is enabled with a monthly budget of ₹84;
 - row-level security is enabled on all 27 tables; clients have no direct privileges on
   `audit_logs`; every security-definer function has a fixed `search_path`;
 - the `inbody-reports` bucket is private, with its size limit, allowed file types and
@@ -490,6 +536,12 @@ production domain `https://trackfitbuddy.vercel.app`), checked read-only on 12 O
   future-dated or orphaned records; files and InBody reports match; no out-of-range
   values. The audit rows without an actor are system actions (migration defaults and
   the command-line creation of the first admin).
+
+**Not yet in production** (added after that check): InBody CSV import. It needs
+migration `20261013000100_inbody_csv_import` (`npx supabase db push`) and the
+`inbody-import` function (`npx supabase functions deploy inbody-import`). It uses the
+secrets that are already set and needs no new one. Until both are deployed, "Import
+CSV" in the app answers "Couldn't import the CSV".
 
 `public.rls_auto_enable` on the hosted database is not from this repository: it is a
 Supabase platform helper (an event trigger that turns on row-level security for new
@@ -521,7 +573,6 @@ to the command, never stored in the repository:
 
 **Not verified:**
 
-- a live Claude request (not configured, on purpose);
 - installing the PWA on a physical phone;
 - browsers other than current Chromium;
 - deploying functions with `--use-api`.
