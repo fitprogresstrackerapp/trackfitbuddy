@@ -87,10 +87,16 @@ export function GuidanceBlock({ plan, guidance, isCurrentWeek }: GuidanceBlockPr
               )}
             >
               <span className="w-5 shrink-0 label-mono text-muted-foreground">{index + 1}</span>
-              <span className="min-w-0 flex-1 break-words">{session.name}</span>
-              {sessionMeta(session) && (
+              {/* The focus is a sentence: it wraps under the name instead of sharing its line. */}
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="break-words">{session.name}</span>
+                {session.focus && (
+                  <span className="text-xs break-words text-muted-foreground">{session.focus}</span>
+                )}
+              </span>
+              {session.durationMinutes && (
                 <span className="shrink-0 label-mono text-muted-foreground">
-                  {sessionMeta(session)}
+                  ~{session.durationMinutes} min
                 </span>
               )}
             </li>
