@@ -127,6 +127,7 @@ model or the budget: [deployment.md → AI configuration](./deployment.md#ai-con
 | Create, join by code, leave              | PASS   | One code per group                                 |
 | Roles, admin replacement, member removal | PASS   | The only admin must appoint another before leaving |
 | Shared progress                          | PASS   | Calories, protein, steps, workout status only      |
+| Weekly view and your week                | PASS   | Monday–Sunday; no ranking, leaderboard or score    |
 | History rules, former member access      | PASS   | A former member loses access at once               |
 
 ### Admin

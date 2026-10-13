@@ -38,7 +38,7 @@ export function GroupsPage() {
       <PageHeader
         eyebrow="Shared"
         title="Groups"
-        description="See how the people in your group are doing today."
+        description="See how the people in your group are doing today and this week."
         actions={
           groups.data && groups.data.length > 0 ? (
             <>
@@ -74,8 +74,8 @@ export function GroupsPage() {
         ) : groups.data.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="You are not in any groups yet."
-            description="Create a group and share its code, or join one with a code from a member."
+            title="You’re not in a group yet."
+            description="Join your friends to keep each other accountable. Create a group and share its code, or join one with a code from a member."
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button onClick={openCreate}>

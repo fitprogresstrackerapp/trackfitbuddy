@@ -19,8 +19,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SegmentedControl, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ROUTES } from '@/constants/routes'
 import { useAccount } from '@/features/auth/auth-context'
+import { formatWeekLabel } from '@/features/progress/lib/progress-format'
 import { resolveDateParam } from '@/lib/dates/day-param'
 import {
   formatDayLabel,
@@ -31,9 +33,17 @@ import {
 import { notify } from '@/lib/feedback'
 
 import type { GroupMember, GroupRole, GroupSummary } from '../api/groups-data'
-import { useGroupDay, useGroupMembers, useGroupMutations, useMyGroups } from '../api/groups-queries'
+import {
+  useGroupDay,
+  useGroupMembers,
+  useGroupMutations,
+  useGroupWeek,
+  useMyGroups,
+} from '../api/groups-queries'
 import { CopyCodeButton } from '../components/group-sheets'
+import { GroupWeekMembers, YourWeek } from '../components/group-week'
 import { MemberCard } from '../components/member-card'
+import { groupWeeks } from '../lib/group-week'
 import {
   formatGroupCode,
   friendlyGroupError,
@@ -46,8 +56,9 @@ const ROLES: readonly GroupRole[] = ['MEMBER', 'LEADER', 'ADMIN']
 
 /**
  * One group (spec §47): today's shared progress by default, earlier dates
- * via the date picker (from the first date this member may view), and
- * membership. Only group-visible fields ever reach this page; the database
+ * via the date picker (from the first date this member may view), a
+ * Monday–Sunday weekly view, your own week, inviting, and membership.
+ * Shared accountability only: no ranking, leaderboard or score. Only group-visible fields ever reach this page; the database
  * returns nothing else.
  */
 export function GroupDetailPage() {
@@ -112,12 +123,33 @@ function GroupView({
   timeZone: string
 }) {
   const [params, setParams] = useSearchParams()
+  const view = params.get('view') === 'week' ? 'week' : 'day'
+  const weeks = groupWeeks(today)
+  const whichWeek = params.get('week') === 'last' ? 'last' : 'this'
+  const shownWeek = whichWeek === 'last' ? weeks.previous : weeks.current
+  const thisWeek = useGroupWeek(userId, group.id, weeks.current, today)
+  const lastWeek = useGroupWeek(userId, group.id, weeks.previous, today)
+  const shownWeekQuery = whichWeek === 'last' ? lastWeek : thisWeek
   const requested = resolveDateParam(params.get('date'), today).date
   const date = requested < group.historyFrom ? group.historyFrom : requested
   const members = useGroupMembers(userId, group.id)
   const day = useGroupDay(userId, group.id, date)
   const [leaving, setLeaving] = useState(false)
   const permissions = permissionsFor(group.myRole)
+
+  const setParam = (key: string, value: string | null) => {
+    setParams(
+      (current) => {
+        const copy = new URLSearchParams(current)
+        if (value === null) copy.delete(key)
+        else copy.set(key, value)
+        return copy
+      },
+      { replace: true },
+    )
+  }
+
+  const invite = <InviteMembers code={group.code} />
 
   const setDate = (next: string) => {
     setParams(
@@ -155,53 +187,96 @@ function GroupView({
         }
       />
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border px-4 py-3">
-        <span className="label-mono text-muted-foreground">Join code</span>
-        <span className="metric text-xl text-foreground">{formatGroupCode(group.code)}</span>
-        <CopyCodeButton code={group.code} />
-        <span className="text-xs text-muted-foreground sm:ml-auto">
-          Share it to invite someone.
-        </span>
-      </div>
+      <YourWeek
+        userId={userId}
+        current={thisWeek}
+        previous={lastWeek}
+        week={weeks.current}
+        today={today}
+      />
 
-      <Section title={date === today ? 'Today' : formatDayLabel(date)}>
-        <DayNav
-          id="group-date"
-          date={date}
-          today={today}
-          min={group.historyFrom}
-          onChange={setDate}
-        />
-        {day.isError ? (
-          <SectionError title="Shared progress unavailable" onRetry={() => void day.refetch()} />
-        ) : day.isPending ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-hidden="true">
-            <Skeleton className="h-44 w-full" />
-            <Skeleton className="h-44 w-full" />
-          </div>
-        ) : day.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No shared data for this date. A member’s data appears from the day they joined.
-          </p>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {day.data.map((member) => (
-              <li key={member.userId} className="min-w-0">
-                <MemberCard day={member} isMe={member.userId === userId} />
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Shared: calories and protein against each member’s own target, steps and workout status.
-          Weight, body measurements, meals and workouts stay private.
-          {permissions.hasExtendedHistory
-            ? ' As a group ' +
-              (group.myRole === 'ADMIN' ? 'admin' : 'leader') +
-              ', you can view history from before you joined.'
-            : ''}
-        </p>
-      </Section>
+      <Tabs
+        value={view}
+        onValueChange={(next) => {
+          setParam('view', next === 'week' ? 'week' : null)
+        }}
+      >
+        <TabsList aria-label="Shared progress">
+          <TabsTrigger value="day">Day</TabsTrigger>
+          <TabsTrigger value="week">Week</TabsTrigger>
+        </TabsList>
+        <TabsContent value="week">
+          <Section
+            title={whichWeek === 'last' ? 'Last week' : 'This week'}
+            meta={formatWeekLabel(shownWeek.start, shownWeek.end)}
+          >
+            <SegmentedControl
+              label="Week"
+              value={whichWeek}
+              onValueChange={(next) => {
+                setParam('week', next === 'last' ? 'last' : null)
+              }}
+              options={[
+                { value: 'this', label: 'This week' },
+                { value: 'last', label: 'Last week' },
+              ]}
+            />
+            <GroupWeekMembers
+              query={shownWeekQuery}
+              userId={userId}
+              week={shownWeek}
+              today={today}
+              memberCount={group.memberCount}
+              invite={invite}
+            />
+          </Section>
+        </TabsContent>
+        <TabsContent value="day">
+          <Section title={date === today ? 'Today' : formatDayLabel(date)}>
+            <DayNav
+              id="group-date"
+              date={date}
+              today={today}
+              min={group.historyFrom}
+              onChange={setDate}
+            />
+            {day.isError ? (
+              <SectionError
+                title="Shared progress unavailable"
+                onRetry={() => void day.refetch()}
+              />
+            ) : day.isPending ? (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-hidden="true">
+                <Skeleton className="h-44 w-full" />
+                <Skeleton className="h-44 w-full" />
+              </div>
+            ) : day.data.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No shared data for this date. A member’s data appears from the day they joined.
+              </p>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {day.data.map((member) => (
+                  <li key={member.userId} className="min-w-0">
+                    <MemberCard day={member} isMe={member.userId === userId} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Shared: calories and protein against each member’s own target, steps and workout
+              status. Weight, body measurements, meals and workouts stay private.
+              {permissions.hasExtendedHistory
+                ? ' As a group ' +
+                  (group.myRole === 'ADMIN' ? 'admin' : 'leader') +
+                  ', you can view history from before you joined.'
+                : ''}
+            </p>
+          </Section>
+        </TabsContent>
+      </Tabs>
+
+      {group.memberCount > 1 && invite}
 
       <MembersSection group={group} userId={userId} timeZone={timeZone} members={members} />
 
@@ -213,6 +288,24 @@ function GroupView({
         members={members.data ?? null}
       />
     </>
+  )
+}
+
+/** The group's join code with Copy (shown to members, as before), and how to use it. */
+function InviteMembers({ code }: { code: string }) {
+  return (
+    <section
+      aria-label="Invite members"
+      className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border px-4 py-3"
+    >
+      <h2 className="w-full label-section text-foreground-secondary">Invite members</h2>
+      <span className="metric text-xl text-foreground">{formatGroupCode(code)}</span>
+      <CopyCodeButton code={code} />
+      <span className="w-full text-xs text-muted-foreground">
+        Share this code with your friends to join this group: Groups → Join group. Capital letters,
+        spaces and dashes don’t matter.
+      </span>
+    </section>
   )
 }
 

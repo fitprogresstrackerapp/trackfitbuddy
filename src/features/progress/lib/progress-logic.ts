@@ -253,9 +253,9 @@ export function weeksOverlapping(period: Period): Period[] {
  */
 export function weeklyTraining(
   period: Period,
-  workouts: readonly TrainingEntry[],
-  targets: Map<string, DailyTargets | null>,
-  cycles: readonly CycleInfo[],
+  workouts: readonly Pick<TrainingEntry, 'date'>[],
+  targets: ReadonlyMap<string, Pick<DailyTargets, 'workoutsPerWeek'> | null>,
+  cycles: readonly Pick<CycleInfo, 'periodStart'>[],
   today: string,
 ): WeekSummary[] {
   return weeksOverlapping(period).map((week) => {

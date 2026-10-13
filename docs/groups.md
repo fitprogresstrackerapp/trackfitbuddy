@@ -5,9 +5,12 @@ Groups exist for **shared accountability, not competition** (spec §46–48). A 
 answers "who is best". There are no leaderboards, scores, points, badges, streak
 competitions, comparisons or group averages.
 
+**No ranking. No leaderboard. No score.** This is a product rule (spec §47), not a
+design choice of one screen: the weekly view below keeps it too, and tests assert it.
+
 Code lives in `src/features/groups`. The database layer is
 `supabase/migrations/20260927000600_groups.sql`, extended by
-`20261006000100_groups_feature.sql`.
+`20261006000100_groups_feature.sql` and `20261015000100_group_weekly_view.sql`.
 
 ## Model
 
@@ -45,6 +48,7 @@ sends can name another creator, member or privilege.
 | `get_my_groups()`                          | the user              | Their active groups: name, description, code, their role, member count, first viewable date |
 | `get_group_members(group)`                 | members of that group | Roster only: user id, display name, group role, join time                                   |
 | `get_group_member_day(group, date)`        | members of that group | The shared daily summary (below)                                                            |
+| `get_group_member_week(group, monday)`     | members of that group | The same daily summary for each day of a Monday–Sunday week, for the weekly view (below)    |
 
 **Admin continuity** (a decision, since the spec says only "any member may leave"):
 
@@ -105,6 +109,52 @@ member data.
 - Their data disappears from the group at once. On rejoining, their history restarts at the
   new join day.
 
+## Weekly view
+
+A Monday–Sunday summary of the **same group-visible information** as the daily cards.
+It answers "Is the group active this week, and how am I doing?", never "who is best".
+
+**Data:** `get_group_member_week(group, monday)` (`SECURITY DEFINER`, one request for
+the whole group). For each day of the week it calls `get_group_member_day()`, so
+membership, group scope, the history rule, each member's join day, former members,
+the target in force, steps and workout status are the existing rules, not a copy. It adds
+two things per member and day, because the existing adherence rules need them:
+
+- the tolerance in force (the day's target snapshot; none → `null`, and the day is not
+  eligible, as in Progress);
+- the weekly workout capacity in force (snapshot, else the covering cycle) and that
+  cycle's start date (for the transition-week rule).
+
+It refuses a non-member (`42501`), a date that is not a Monday and a future week
+(`22023`). Days after the caller's today are never returned. Nothing is stored.
+
+**Weekly values** (`src/features/groups/lib/group-week.ts`), computed with the Progress
+functions, so Groups, Progress and Workout agree for the same days:
+
+| Value             | Rule (existing function)                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| Calories in range | `summarizeNutrition`: completed days with logged food and a target snapshot; within the calorie range         |
+| Protein met       | `summarizeNutrition`: the same eligible days; protein ≥ target × tolerance                                    |
+| Workout days      | `weeklyTraining`: distinct days with a workout, against the capacity in force; activities never count         |
+| Steps             | `stepsSummary`: average of days with an active (latest valid) entry, shown as "7.4k/day". No step goal exists |
+
+- **Eligibility:** a member counts from the day they joined (`get_group_member_day`).
+  Someone joining on Wednesday is judged from Wednesday; Monday and Tuesday don't count
+  against them, and the card says "From WED …".
+- **Current week:** calories and protein count completed days only (today is not yet
+  complete); workouts count days so far. Future days never count as misses.
+- **Missing data** stays missing: `—`, never 0 or 0%.
+- **Order:** you first, then by name. Never by any value.
+- **Your week:** your own four values for this week, and the change since last week
+  ("↑ 8 pts", "↑ 1 day", "↑ 1.2k/day") only where both weeks have a value. Calories and
+  protein changes are in percentage points.
+- **Group activity:** counts only: members active (logged food, a workout or steps on any
+  day), and members who logged food, a workout, steps. Not who did better.
+- **One-member group:** "You're the first one here." and the invite section; no
+  comparison.
+- **Not built, by the spec:** ranks, positions, leaderboards, scores or points, medals or
+  winners, "ahead of / behind", ordering by results. No AI is involved.
+
 ## UI
 
 - **`/groups`:**
@@ -113,7 +163,12 @@ member data.
   - the empty state offers both.
   - After creation, the code is shown with a Copy button and a link to the group.
 - **`/groups/:groupId`:**
-  - Header: member count, your role and Leave group, plus the join code with Copy.
+  - Header: member count, your role and Leave group.
+  - Your week (above).
+  - **Day | Week**: Day (Today) stays the default (spec §47). Week has This week / Last
+    week. `?view=week` and `?week=last` are supported.
+  - Invite members: the join code with Copy and how to use it. Shown to every member, as
+    before.
   - Date: Today by default. The shared day picker (`DayNav`) never goes past today or
     before your first viewable date, and `?date=` is supported.
   - One card per member: calories and protein as `actual / target`, steps, and Workout done
@@ -130,6 +185,16 @@ member data.
 
 ## Tests
 
+- **Weekly view:**
+  - Database: `supabase/tests/database/15_group_week.test.sql` (20 assertions): access,
+    other groups, former members, Monday weeks, no future days, join-day eligibility, the
+    history rule, agreement with the daily view on every row, tolerance and capacity,
+    returned columns (no private data, no score or rank).
+  - Integration: `tests/integration/group-week.test.ts`: a member's week in the group
+    equals their own Progress for the same days; access and former members.
+  - Unit and component: `src/features/groups/lib/group-week.test.ts` and the weekly
+    tests in `groups-pages.test.tsx`, including an assertion that no ranking, leaderboard,
+    score, position or winner appears on the page.
 - **Database:** `supabase/tests/database/09_groups.test.sql` (66 assertions) covers:
   - creation and authorization;
   - join by code, invalid codes and duplicates;
@@ -146,6 +211,8 @@ member data.
 
 ## Limitations
 
-- No step goal exists yet, so steps show without a target.
+- No step goal exists yet, so steps show without a target (weekly: an average per day).
+- The weekly view shows This week and Last week only.
+- Your week in a group counts from the day you joined that group, like everyone else in it.
 - Leaders' extra access is limited to history. No other leader features exist in Phase 1.
 - There is no rate limiting on code attempts beyond the code space (31⁸ combinations).

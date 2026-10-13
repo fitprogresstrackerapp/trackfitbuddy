@@ -174,3 +174,73 @@ export async function setMemberRole(
   })
   if (error) throw error
 }
+
+/**
+ * One member's group-visible day within a week, plus what the shared adherence
+ * rules need: the tolerance and weekly workout capacity in force that day.
+ * Only days the member may count are returned (from their join day, never
+ * after today). `null` = nothing recorded (never zero).
+ */
+export interface MemberWeekDay {
+  date: string
+  userId: string
+  name: string | null
+  role: GroupRole
+  calories: number | null
+  caloriesTarget: number | null
+  proteinG: number | null
+  proteinTargetG: number | null
+  steps: number | null
+  workoutLogged: boolean
+  /** Known only when the day's target snapshot exists. */
+  tolerance: { nutrient: number; calorieLower: number; calorieUpper: number } | null
+  workoutsPerWeek: number | null
+  /** Start of the recommendation cycle covering the day (for transition weeks). */
+  cycleStart: string | null
+}
+
+type Nullable<T> = { [K in keyof T]: T[K] | null }
+type WeekRow = Nullable<Database['public']['Functions']['get_group_member_week']['Returns'][number]>
+
+/** A Monday–Sunday week of group-visible days, in one request. */
+export async function fetchGroupWeek(
+  supabase: AppSupabaseClient,
+  groupId: string,
+  weekStart: string,
+): Promise<MemberWeekDay[]> {
+  const { data, error } = await supabase.rpc('get_group_member_week', {
+    p_group_id: groupId,
+    p_week_start: weekStart,
+  })
+  if (error) throw error
+  return (data as WeekRow[]).flatMap((row) =>
+    row.day === null || row.user_id === null || row.group_role === null
+      ? []
+      : [
+          {
+            date: row.day,
+            userId: row.user_id,
+            name: row.name,
+            role: row.group_role,
+            calories: row.calories,
+            caloriesTarget: row.calories_target,
+            proteinG: row.protein_g,
+            proteinTargetG: row.protein_target_g,
+            steps: row.steps,
+            workoutLogged: row.workout_logged === true,
+            tolerance:
+              row.nutrition_tolerance === null ||
+              row.calorie_lower_tolerance === null ||
+              row.calorie_upper_tolerance === null
+                ? null
+                : {
+                    nutrient: row.nutrition_tolerance,
+                    calorieLower: row.calorie_lower_tolerance,
+                    calorieUpper: row.calorie_upper_tolerance,
+                  },
+            workoutsPerWeek: row.workouts_per_week,
+            cycleStart: row.cycle_start,
+          },
+        ],
+  )
+}

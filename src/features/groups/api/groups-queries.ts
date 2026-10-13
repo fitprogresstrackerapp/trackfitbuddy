@@ -1,12 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import type { Period } from '@/features/progress/types'
 import { getSupabaseClient } from '@/lib/supabase/client'
+
+import { memberWeeks } from '../lib/group-week'
 
 import {
   createGroup,
   fetchGroupDay,
   fetchGroupMembers,
+  fetchGroupWeek,
   fetchMyGroups,
   joinGroup,
   leaveGroup,
@@ -28,6 +32,8 @@ export const groupKeys = {
   members: (userId: string, groupId: string) => ['groups', userId, groupId, 'members'] as const,
   day: (userId: string, groupId: string, date: string) =>
     ['groups', userId, groupId, 'day', date] as const,
+  week: (userId: string, groupId: string, weekStart: string) =>
+    ['groups', userId, groupId, 'week', weekStart] as const,
 }
 
 function useSupabase() {
@@ -54,6 +60,19 @@ export function useGroupDay(userId: string, groupId: string, date: string, enabl
     queryKey: groupKeys.day(userId, groupId, date),
     queryFn: () => fetchGroupDay(supabase, groupId, date),
     enabled,
+  })
+}
+
+/**
+ * One Monday–Sunday week of the group, summarised per member with the shared
+ * Progress rules. One request for every member.
+ */
+export function useGroupWeek(userId: string, groupId: string, week: Period, today: string) {
+  const supabase = useSupabase()
+  return useQuery({
+    queryKey: groupKeys.week(userId, groupId, week.start),
+    queryFn: () => fetchGroupWeek(supabase, groupId, week.start),
+    select: (days) => memberWeeks(days, week, today),
   })
 }
 

@@ -3256,6 +3256,26 @@ export type Database = {
           workout_logged: boolean
         }[]
       }
+      get_group_member_week: {
+        Args: { p_group_id: string; p_week_start: string }
+        Returns: {
+          calorie_lower_tolerance: number
+          calorie_upper_tolerance: number
+          calories: number
+          calories_target: number
+          cycle_start: string
+          day: string
+          group_role: Database['public']['Enums']['group_role']
+          name: string
+          nutrition_tolerance: number
+          protein_g: number
+          protein_target_g: number
+          steps: number
+          user_id: string
+          workout_logged: boolean
+          workouts_per_week: number
+        }[]
+      }
       get_group_members: {
         Args: { p_group_id: string }
         Returns: {
