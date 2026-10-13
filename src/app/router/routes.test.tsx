@@ -97,6 +97,7 @@ describe('signed in with a complete profile', () => {
 
   it.each([
     ['/admin/users', /^users$/i],
+    ['/admin/food', /^food database$/i],
     ['/admin/foods', /^food database$/i],
     ['/admin/settings', /^system settings$/i],
   ])('admin section %s renders inside the admin shell', async (path, title) => {

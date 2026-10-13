@@ -63,16 +63,17 @@ model or the budget: [deployment.md → AI configuration](./deployment.md#ai-con
 
 ### Food
 
-| Item                                           | Status         | Notes                                                                                  |
-| ---------------------------------------------- | -------------- | -------------------------------------------------------------------------------------- |
-| Search, recent and frequent                    | PASS           |                                                                                        |
-| Quantity, meal creation, editing, copy, delete | PASS           | A copy is an independent record                                                        |
-| Nutrition snapshots                            | PASS           | Logged meals never change when a food changes                                          |
-| Date locking and late entry                    | PASS           | Editable today; locked after; late entry up to 90 days, created locked                 |
-| Target adherence                               | PASS           | Eligible tracked days only                                                             |
-| Custom food, pending review                    | PASS (limited) | A user can create and use their own foods. No admin approval screen: they stay private |
-| Shared food database                           | PASS (limited) | Loaded once by the operator from the starter catalogue; no admin screen to add or edit |
-| Duplicate detection and merging (§11)          | NOT BUILT      | The database supports merges; there is no screen                                       |
+| Item                                           | Status    | Notes                                                                            |
+| ---------------------------------------------- | --------- | -------------------------------------------------------------------------------- |
+| Search, recent and frequent                    | PASS      |                                                                                  |
+| Quantity, meal creation, editing, copy, delete | PASS      | A copy is an independent record                                                  |
+| Nutrition snapshots                            | PASS      | Logged meals never change when a food changes                                    |
+| Date locking and late entry                    | PASS      | Editable today; locked after; late entry up to 90 days, created locked           |
+| Target adherence                               | PASS      | Eligible tracked days only                                                       |
+| Custom food, pending review                    | PASS      | Usable by its creator at once; shared after an admin approves it                 |
+| Shared food database                           | PASS      | Admin → Food Database: add, edit, activate, deactivate, review                   |
+| Duplicate detection (§11)                      | PASS      | Normalized names; one active food per name; likely duplicates shown to the admin |
+| Merging duplicate foods (§11)                  | NOT BUILT | The database supports merges; there is no screen                                 |
 
 ### Workout and activity
 
@@ -130,16 +131,17 @@ model or the budget: [deployment.md → AI configuration](./deployment.md#ai-con
 
 ### Admin
 
-| Item                                                                | Status         | Notes                                                       |
-| ------------------------------------------------------------------- | -------------- | ----------------------------------------------------------- |
-| Dashboard                                                           | PASS           |                                                             |
-| User search, filters, pagination, details                           | PASS           | Done on the server                                          |
-| Create user, PIN reset, activate/deactivate                         | PASS           |                                                             |
-| Corrections with audit                                              | PASS           | Original kept; stale saves are refused with a clear message |
-| Audit log                                                           | PASS           | Append-only                                                 |
-| Manager restrictions                                                | PASS (limited) | Enforced in the database; assignments are made in SQL       |
-| Super-admin protections                                             | PASS           |                                                             |
-| Managers, Groups, Food Database, AI Usage, System Settings sections | NOT BUILT      | Placeholders in the admin navigation                        |
+| Item                                                 | Status         | Notes                                                       |
+| ---------------------------------------------------- | -------------- | ----------------------------------------------------------- |
+| Dashboard                                            | PASS           |                                                             |
+| User search, filters, pagination, details            | PASS           | Done on the server                                          |
+| Create user, PIN reset, activate/deactivate          | PASS           |                                                             |
+| Corrections with audit                               | PASS           | Original kept; stale saves are refused with a clear message |
+| Audit log                                            | PASS           | Append-only                                                 |
+| Manager restrictions                                 | PASS (limited) | Enforced in the database; assignments are made in SQL       |
+| Super-admin protections                              | PASS           |                                                             |
+| Food Database                                        | PASS           | Shared catalogue and review of user-created foods           |
+| Managers, Groups, AI Usage, System Settings sections | NOT BUILT      | Placeholders in the admin navigation                        |
 
 ### PWA
 
@@ -152,15 +154,16 @@ model or the budget: [deployment.md → AI configuration](./deployment.md#ai-con
 
 ## Known limitations
 
-- **No admin screens** for the food database, manager assignment, group management, AI
-  usage or system settings. The operator uses the SQL statements in deployment.md.
+- **No admin screens** for manager assignment, group management, AI usage or system
+  settings. The operator uses the SQL statements in deployment.md.
 - **Food values are approximate.** The starter catalogue is a reviewed list of typical
   values, not a nutrition database.
 - **InBody results come from the InBody app's CSV export** (kg units, one measurement
   per import). A PDF or image report is stored but never read (no OCR), and the admin
   screens cannot open the file. A user without a CSV needs the operator to enter the
   values.
-- **User-submitted foods stay private**; there is no approval or merge screen.
+- **Duplicate foods cannot be merged in the app**; an admin deactivates one instead.
+- **Foods have no category**: neither the specification nor the data model has one.
 - **Recommendation processing is manual**, once a month, started by an admin.
 - **Users cannot change their own PIN.**
 - **Accounts are never deleted**, only deactivated (by design, spec §7).

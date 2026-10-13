@@ -1,4 +1,4 @@
-import type { RouteObject } from 'react-router'
+import { Navigate, type RouteObject } from 'react-router'
 
 import { PageLoader } from '@/components/common/loading-state'
 import { ADMIN_NAV } from '@/constants/navigation'
@@ -70,10 +70,16 @@ async function loadAdminAudit() {
   return { Component: AdminAuditPage }
 }
 
+async function loadAdminFood() {
+  const { AdminFoodPage } = await import('@/features/admin/pages/admin-food-page')
+  return { Component: AdminFoodPage }
+}
+
 /** Lazy page for an admin-only section (placeholder where not built yet). */
 function adminSectionLoader(to: string) {
   if (to === ROUTES.adminProcessing) return loadRecommendationsAdmin
   if (to === ROUTES.adminAudit) return loadAdminAudit
+  if (to === ROUTES.adminFoods) return loadAdminFood
   return loadAdminSection
 }
 
@@ -152,15 +158,22 @@ export const appRoutes: RouteObject[] = [
                       { path: 'users/:userId', lazy: loadAdminUserDetail },
                       {
                         element: <RequireRole roles={ADMIN_ROLES} />,
-                        children: ADMIN_NAV.filter((item) => item.to !== ROUTES.adminUsers).map(
-                          (item) =>
-                            item.to === ROUTES.admin
-                              ? { index: true, lazy: loadAdminDashboard }
-                              : {
-                                  path: item.to.slice(ROUTES.admin.length + 1),
-                                  lazy: adminSectionLoader(item.to),
-                                },
-                        ),
+                        children: [
+                          ...ADMIN_NAV.filter((item) => item.to !== ROUTES.adminUsers).map(
+                            (item): RouteObject =>
+                              item.to === ROUTES.admin
+                                ? { index: true, lazy: loadAdminDashboard }
+                                : {
+                                    path: item.to.slice(ROUTES.admin.length + 1),
+                                    lazy: adminSectionLoader(item.to),
+                                  },
+                          ),
+                          // The section's earlier address.
+                          {
+                            path: 'foods',
+                            element: <Navigate to={ROUTES.adminFoods} replace />,
+                          },
+                        ],
                       },
                     ],
                   },

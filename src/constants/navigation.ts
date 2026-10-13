@@ -96,7 +96,7 @@ export const ADMIN_NAV: readonly NavItem[] = [
     label: 'Food Database',
     to: ROUTES.adminFoods,
     icon: ICONS.food,
-    description: 'Shared foods, submissions, duplicates and merges.',
+    description: 'The shared food catalogue and foods created by users awaiting review.',
   },
   {
     label: 'Recommendations',

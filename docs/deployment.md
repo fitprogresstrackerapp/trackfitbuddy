@@ -336,9 +336,9 @@ with this repository, the Supabase CLI and the git-ignored `.env.supabase` file.
 
 ### Food database
 
-The shared food database starts empty, and Admin → Food Database is a placeholder: foods
-cannot be added or edited in the app yet. Until they exist, a user can only log food by
-creating their own custom foods.
+Admins manage the shared food database in the app (Admin → Food Database): add, edit,
+activate and deactivate foods, and approve or reject foods created by users. See
+[admin.md](./admin.md#food-database).
 
 - **Starter catalogue:** `supabase/seeds/starter-foods.json` holds about a hundred common
   Indian and household foods with **approximate** per-serving values (the app shows them
@@ -352,10 +352,10 @@ creating their own custom foods.
   It is safe to run again: foods already present (same name) are skipped and never
   changed, and nothing is deleted. To add foods later, add them to the file and run it
   again.
-- **Correcting a food:** in the SQL editor, update the row in `public.food_items`. Meals
-  already logged keep the values they were logged with (spec §12).
+- **Correcting a food:** Admin → Food Database → Edit. Meals already logged keep the
+  values they were logged with (spec §12).
 - **User-submitted foods** stay private to the person who created them ("Pending
-  review"); there is no approval screen yet.
+  review") until an admin approves them in Admin → Food Database.
 
 ### InBody results
 
@@ -537,11 +537,13 @@ production domain `https://trackfitbuddy.vercel.app`), checked read-only on 12 O
   values. The audit rows without an actor are system actions (migration defaults and
   the command-line creation of the first admin).
 
-**Not yet in production** (added after that check): InBody CSV import. It needs
-migration `20261013000100_inbody_csv_import` (`npx supabase db push`) and the
-`inbody-import` function (`npx supabase functions deploy inbody-import`). It uses the
-secrets that are already set and needs no new one. Until both are deployed, "Import
-CSV" in the app answers "Couldn't import the CSV".
+**Since that check:** InBody CSV import (migration `20261013000100_inbody_csv_import` and
+the `inbody-import` function) was deployed and verified on 13 Oct 2026.
+
+**Not yet in production:** the Admin Food Database. It needs migration
+`20261014000100_admin_food_database` (`npx supabase db push`) and the new frontend; no
+Edge Function and no secret. The migration adds a unique index on active food names;
+the 96 production foods were checked read-only and have no duplicate names.
 
 `public.rls_auto_enable` on the hosted database is not from this repository: it is a
 Supabase platform helper (an event trigger that turns on row-level security for new

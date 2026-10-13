@@ -170,7 +170,10 @@ appends to the caller's own editable meal and does not open a late-entry path.
   - Zod on the client: non-negative, finite, at most 2 decimals, sensible maximums, and a
     simple unit such as `g`, `ml`, `piece` or `bowl`.
   - Database constraints stay authoritative.
-- **Status:** saved as `PENDING_REVIEW`. RLS forbids self-approval.
+- **Status:** saved as `PENDING_REVIEW`. RLS forbids self-approval. An admin reviews it in
+  Admin → Food Database ([admin.md](./admin.md#food-database)): **approved**, it becomes a
+  shared food every user can find; **rejected**, it is never shared and can no longer be
+  logged.
 - **Use:** only the submitter can log the food or find it in search. The user continues
   straight to its quantity after creating it.
 - **Similar names:** while the name is typed, similar existing foods are shown as a
@@ -178,6 +181,9 @@ appends to the caller's own editable meal and does not open a late-entry path.
   merging is an admin task.
 - **My foods:** the list shows each submission with its status (Pending review / Approved /
   Rejected).
+- **After approval:** the creator does not need to create it again. Their earlier logs
+  count for the shared food in recent and frequent foods, and copying such a meal logs
+  the shared food. Meals already logged keep their snapshots.
 
 ## Errors
 

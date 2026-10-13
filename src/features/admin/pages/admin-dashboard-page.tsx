@@ -83,7 +83,7 @@ export function AdminDashboardPage() {
               {
                 label: 'Food submissions',
                 value: formatNumber(dashboard.data.foodSubmissionsPending),
-                to: null,
+                to: `${ROUTES.adminFoods}?status=PENDING_REVIEW`,
               },
               {
                 label: 'AI spend (est.)',

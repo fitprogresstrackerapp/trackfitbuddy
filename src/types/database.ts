@@ -2824,6 +2824,23 @@ export type Database = {
     Functions: {
       accept_recommendation: { Args: { p_cycle_id: string }; Returns: undefined }
       add_meal_items: { Args: { p_items: Json; p_meal_id: string }; Returns: number }
+      admin_approve_food_submission: {
+        Args: {
+          p_calories: number
+          p_carbs_g: number
+          p_expected_updated_at: string
+          p_fat_g: number
+          p_fiber_g: number
+          p_id: string
+          p_is_approximate?: boolean
+          p_name: string
+          p_notes?: string
+          p_protein_g: number
+          p_serving_quantity: number
+          p_serving_unit: string
+        }
+        Returns: string
+      }
       admin_audit_log: {
         Args: {
           p_action?: Database['public']['Enums']['audit_action']
@@ -2933,6 +2950,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_create_food: {
+        Args: {
+          p_active?: boolean
+          p_calories: number
+          p_carbs_g: number
+          p_fat_g: number
+          p_fiber_g: number
+          p_is_approximate?: boolean
+          p_name: string
+          p_protein_g: number
+          p_serving_quantity: number
+          p_serving_unit: string
+        }
+        Returns: string
+      }
       admin_daily_nutrition: {
         Args: { p_end: string; p_start: string; p_user_id: string }
         Returns: {
@@ -2965,6 +2997,53 @@ export type Database = {
         Args: { p_domain: string; p_expected_updated_at: string; p_id: string; p_reason?: string }
         Returns: undefined
       }
+      admin_food_duplicates: {
+        Args: { p_exclude_food_id?: string; p_name: string }
+        Returns: {
+          calories: number
+          carbs_g: number
+          fat_g: number
+          fiber_g: number
+          id: string
+          is_exact: boolean
+          name: string
+          protein_g: number
+          serving_quantity: number
+          serving_unit: string
+          status: string
+        }[]
+      }
+      admin_list_foods: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_sort?: string
+          p_source?: string
+          p_status?: string
+        }
+        Returns: {
+          calories: number
+          carbs_g: number
+          created_at: string
+          fat_g: number
+          fiber_g: number
+          id: string
+          is_approximate: boolean
+          kind: string
+          name: string
+          protein_g: number
+          review_notes: string
+          serving_quantity: number
+          serving_unit: string
+          source: string
+          status: string
+          submitted_by_name: string
+          total_count: number
+          updated_at: string
+          version: number
+        }[]
+      }
       admin_list_users: {
         Args: {
           p_active?: boolean
@@ -2988,12 +3067,37 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_reject_food_submission: {
+        Args: { p_expected_updated_at: string; p_id: string; p_notes?: string }
+        Returns: undefined
+      }
       admin_reset_pin: {
         Args: { p_actor_id: string; p_pin: string; p_reason?: string; p_user_id: string }
         Returns: undefined
       }
+      admin_set_food_active: {
+        Args: { p_active: boolean; p_expected_updated_at: string; p_id: string; p_reason?: string }
+        Returns: undefined
+      }
       admin_set_user_active: {
         Args: { p_active: boolean; p_reason?: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_update_food: {
+        Args: {
+          p_calories: number
+          p_carbs_g: number
+          p_expected_updated_at: string
+          p_fat_g: number
+          p_fiber_g: number
+          p_id: string
+          p_is_approximate: boolean
+          p_name: string
+          p_protein_g: number
+          p_reason?: string
+          p_serving_quantity: number
+          p_serving_unit: string
+        }
         Returns: undefined
       }
       admin_user_account: {

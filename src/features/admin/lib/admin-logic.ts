@@ -68,6 +68,7 @@ export const DOMAIN_LABELS: Record<string, string> = {
   group_memberships: 'Group membership',
   system_settings: 'Settings',
   food_items: 'Food database',
+  food_submissions: 'Food submissions',
 }
 
 export const domainLabel = (entity: string) => DOMAIN_LABELS[entity] ?? entity
@@ -76,6 +77,9 @@ export const domainLabel = (entity: string) => DOMAIN_LABELS[entity] ?? entity
 export function actionLabel(entry: Pick<AuditEntry, 'action' | 'entityType'>): string {
   if (entry.entityType === 'profiles' && entry.action === 'DELETE') return 'Deactivated'
   if (entry.entityType === 'profiles' && entry.action === 'RESTORE') return 'Activated'
+  // A food is deactivated, never deleted (its soft delete is "inactive").
+  if (entry.entityType === 'food_items' && entry.action === 'DELETE') return 'Deactivated'
+  if (entry.entityType === 'food_items' && entry.action === 'RESTORE') return 'Activated'
   return ACTION_LABELS[entry.action]
 }
 
@@ -164,6 +168,7 @@ export function friendlyAdminError(error: unknown, fallback: string): string {
     // PT409: the record's version no longer matches (HTTP 409 from the database).
     if (code === 'PT409') return 'This record changed since you opened it. Refresh and try again.'
     if (code === '42501') return 'You are not allowed to do this.'
+    if (code === 'P0002') return 'That record is no longer available. Refresh and try again.'
     if (code === '22023' && typeof message === 'string' && message.length < 120) return message
     if (code === '23514') return 'One of the values is not allowed.'
   }

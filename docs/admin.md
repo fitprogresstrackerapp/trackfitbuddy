@@ -1,7 +1,7 @@
 # Admin management, corrections and audit
 
 Covers the admin area (`/admin`, `/admin/users`, `/admin/users/:userId`,
-`/admin/audit`), manager access, domain-specific data corrections, account
+`/admin/audit`, `/admin/food`), manager access, domain-specific data corrections, account
 activation, PIN reset, and the audit log. Migration:
 `supabase/migrations/20261007000100_admin_management.sql`.
 
@@ -197,6 +197,78 @@ with a reason.
   columns (`updated_at`, and similar) are hidden. The user page shows that user's latest
   entries.
 
+## Food Database
+
+`/admin/food` (ADMIN and SUPER_ADMIN; managers have no access) manages the shared food
+catalogue and reviews foods created by users. Migration:
+`supabase/migrations/20261014000100_admin_food_database.sql`. The earlier address
+`/admin/foods` redirects here.
+
+**The model is unchanged; it already had everything:**
+
+| Concept           | Where it lives                                                                                |
+| ----------------- | --------------------------------------------------------------------------------------------- |
+| Shared catalogue  | `food_items`. One table for all users; there is no per-user food database                     |
+| Active / inactive | `food_items.is_deleted` (soft delete): inactive foods are hidden from users, kept for history |
+| User-created food | `food_submissions`: `PENDING_REVIEW` → `APPROVED` / `REJECTED` (spec §11)                     |
+| Provenance        | `food_items.source_submission_id` (approved from a user's food) and `created_by`              |
+| Version history   | `food_items.version` and `food_item_versions`, written by the existing triggers               |
+| Audit             | `audit_logs`, written by the existing triggers, with the admin and the reason                 |
+
+Recent and frequent foods, meals and quantities stay per user.
+
+**Source** is derived, never stored twice: `USER_SUBMISSION` (approved from a user's food;
+shown as "User-created, approved"), `ADMIN` (added in the app) or `CATALOGUE` (loaded by
+the operator, for example the starter catalogue). A user's food is never shown as
+verified until an admin approves it.
+
+**Functions** (all `SECURITY DEFINER`, each checks `is_admin()` itself; granted to
+`authenticated` and refused to everyone else):
+
+| Function                        | Does                                                                                |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| `admin_list_foods`              | One list of foods and user-created foods: search, status, source, sort, page (25)   |
+| `admin_food_duplicates`         | Foods with the same or a similar name (normalized name, containment, trigram ≥ 0.4) |
+| `admin_create_food`             | A new shared food, active or inactive                                               |
+| `admin_update_food`             | Name, serving, nutrition, approximate flag; version-checked                         |
+| `admin_set_food_active`         | Deactivate (with a reason) or activate; version-checked                             |
+| `admin_approve_food_submission` | Creates the shared food from the reviewed values and marks the submission approved  |
+| `admin_reject_food_submission`  | Marks the submission rejected, with an optional note                                |
+
+- **Statuses in the list:** Active, Inactive, Pending review, Rejected. Approved
+  submissions appear as the shared food they became. Merged foods are not listed
+  (there is no merge tool, and none exist).
+- **Nutrition basis:** values are per serving as stored (`serving_quantity`
+  `serving_unit`), shown as "per 100 g", "per 1 bowl". They are never converted.
+- **Validation:** the user food form's rules (`foodSubmissionSchema`) in the browser, and
+  the same limits again in the database (`private.check_food_values`). Values are
+  accepted or refused, never adjusted. When the calories are far from what the macros
+  imply (the starter catalogue's rule, now shared in `src/features/food/lib/food-quality.ts`),
+  the form asks the admin to check and saves only on a second, explicit click.
+- **Duplicates:** names are compared after normalization (lower case, punctuation and
+  repeated spaces removed). A unique index allows one active food per normalized name;
+  the review and add forms list likely duplicates while the admin types. Nothing is
+  merged automatically.
+- **Approve:** the admin may correct the name or values first (spec §11, "Admin can edit
+  and approve"). The submission keeps what the user entered; the food links back to it.
+  The creator's earlier logs then count for the shared food: it appears in their recent
+  and frequent foods, and copying such a meal logs the shared food (only when the serving
+  unit is unchanged, so the quantity still means the same thing).
+- **Reject:** the submission is kept with the reviewer, time and note. It is never
+  shared and can no longer be logged; meals that already used it keep their snapshots.
+- **Stale edits:** every write checks the `updated_at` the admin saw
+  (`assert_current_version`, `PT409`); the UI says "This record changed since you opened
+  it. Refresh and try again."
+
+**Historical meals.** Meal items store their own nutrition snapshot when they are logged
+(spec §12). No food-database function touches meals or meal items, so an edit changes
+only what is logged afterwards.
+
+**Audit.** `food_items`: CREATE, UPDATE, DELETE (shown as "Deactivated") and RESTORE
+("Activated"), with the admin and the reason. `food_submissions`: approval and rejection,
+with the reviewer and the submitting user. Food values are the only content; no
+personal data is involved apart from the submitter's id.
+
 ## Dashboard
 
 `admin_dashboard()` returns counts that are already computed elsewhere:
@@ -205,7 +277,7 @@ with a reason.
 - incomplete profiles;
 - recommendations in review, pending and failed;
 - active groups;
-- pending food submissions;
+- pending food submissions (opens the review queue);
 - this month's AI spend and budget.
 
 The dashboard also shows the six most recent audit entries.

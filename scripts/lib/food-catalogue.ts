@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
+import { hasEnergyMismatch } from '../../src/features/food/lib/food-quality.ts'
 import type { Database } from '../../src/types/database.ts'
 
 /*
@@ -37,19 +38,11 @@ export const catalogueSchema = z.object({
 export const normalizeFoodName = (name: string) => name.trim().toLowerCase().replace(/\s+/g, ' ')
 
 /**
- * Energy implied by the macros (4/4/9 kcal per gram). A catalogue entry whose
- * calories are far from this is almost certainly a typing error.
+ * Catalogue entries whose calories are far from what their macros imply:
+ * almost certainly a typing error. The rule is shared with the admin food form.
  */
-export function macroEnergy(food: Pick<CatalogueFood, 'protein_g' | 'carbs_g' | 'fat_g'>): number {
-  return 4 * food.protein_g + 4 * food.carbs_g + 9 * food.fat_g
-}
-
 export function inconsistentFoods(foods: readonly CatalogueFood[]): string[] {
-  return foods
-    .filter(
-      (food) => Math.abs(food.calories - macroEnergy(food)) > Math.max(25, 0.2 * food.calories),
-    )
-    .map((food) => food.name)
+  return foods.filter(hasEnergyMismatch).map((food) => food.name)
 }
 
 /** Catalogue entries not yet in the database, compared by normalized name. */
