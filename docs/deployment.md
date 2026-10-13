@@ -540,10 +540,13 @@ production domain `https://trackfitbuddy.vercel.app`), checked read-only on 12 O
 **Since that check:** InBody CSV import (migration `20261013000100_inbody_csv_import` and
 the `inbody-import` function) was deployed and verified on 13 Oct 2026.
 
-**Not yet in production:** the Admin Food Database. It needs migration
-`20261014000100_admin_food_database` (`npx supabase db push`) and the new frontend; no
-Edge Function and no secret. The migration adds a unique index on active food names;
-the 96 production foods were checked read-only and have no duplicate names.
+The Admin Food Database (migration `20261014000100_admin_food_database`) is applied. The
+96 production foods were checked read-only beforehand and had no duplicate names, as
+its unique index on active food names requires.
+
+**Not yet in production:** bulk approval of user-created foods. It needs migration
+`20261014000200_bulk_food_approval` (`npx supabase db push`) and the new frontend; no
+Edge Function and no secret.
 
 `public.rls_auto_enable` on the hosted database is not from this repository: it is a
 Supabase platform helper (an event trigger that turns on row-level security for new

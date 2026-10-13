@@ -6,6 +6,7 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { adminKeys } from './admin-queries'
 import {
   approveFoodSubmission,
+  approveFoodSubmissions,
   createFood,
   fetchFoodDuplicates,
   listFoods,
@@ -87,6 +88,11 @@ export function useFoodAdminMutations() {
     approve: useMutation({
       mutationFn: (input: Parameters<typeof approveFoodSubmission>[1]) =>
         approveFoodSubmission(supabase, input),
+      onSuccess,
+    }),
+    approveMany: useMutation({
+      mutationFn: (input: Parameters<typeof approveFoodSubmissions>[1]) =>
+        approveFoodSubmissions(supabase, input),
       onSuccess,
     }),
     reject: useMutation({

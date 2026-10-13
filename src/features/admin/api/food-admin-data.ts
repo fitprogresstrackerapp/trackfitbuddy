@@ -217,3 +217,30 @@ export async function rejectFoodSubmission(
   })
   if (error) throw error
 }
+
+export interface BulkApprovalResult {
+  id: string
+  approved: boolean
+  /** Why a food was skipped; null when approved. */
+  message: string | null
+}
+
+/**
+ * Approves several user-created foods exactly as submitted (no edits). A food
+ * that cannot be approved is skipped and reported; the others still are.
+ */
+export async function approveFoodSubmissions(
+  supabase: AppSupabaseClient,
+  input: { items: readonly { id: string; version: string }[]; notes: string | null },
+): Promise<BulkApprovalResult[]> {
+  const { data, error } = await supabase.rpc('admin_approve_food_submissions', {
+    p_items: input.items.map((item) => ({ id: item.id, expected_updated_at: item.version })),
+    ...optionalText('p_notes', input.notes),
+  })
+  if (error) throw error
+  return data.map((row) => ({
+    id: row.id,
+    approved: row.outcome === 'APPROVED',
+    message: row.message,
+  }))
+}

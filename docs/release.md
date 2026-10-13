@@ -63,17 +63,17 @@ model or the budget: [deployment.md → AI configuration](./deployment.md#ai-con
 
 ### Food
 
-| Item                                           | Status    | Notes                                                                            |
-| ---------------------------------------------- | --------- | -------------------------------------------------------------------------------- |
-| Search, recent and frequent                    | PASS      |                                                                                  |
-| Quantity, meal creation, editing, copy, delete | PASS      | A copy is an independent record                                                  |
-| Nutrition snapshots                            | PASS      | Logged meals never change when a food changes                                    |
-| Date locking and late entry                    | PASS      | Editable today; locked after; late entry up to 90 days, created locked           |
-| Target adherence                               | PASS      | Eligible tracked days only                                                       |
-| Custom food, pending review                    | PASS      | Usable by its creator at once; shared after an admin approves it                 |
-| Shared food database                           | PASS      | Admin → Food Database: add, edit, activate, deactivate, review                   |
-| Duplicate detection (§11)                      | PASS      | Normalized names; one active food per name; likely duplicates shown to the admin |
-| Merging duplicate foods (§11)                  | NOT BUILT | The database supports merges; there is no screen                                 |
+| Item                                           | Status    | Notes                                                                                    |
+| ---------------------------------------------- | --------- | ---------------------------------------------------------------------------------------- |
+| Search, recent and frequent                    | PASS      |                                                                                          |
+| Quantity, meal creation, editing, copy, delete | PASS      | A copy is an independent record                                                          |
+| Nutrition snapshots                            | PASS      | Logged meals never change when a food changes                                            |
+| Date locking and late entry                    | PASS      | Editable today; locked after; late entry up to 90 days, created locked                   |
+| Target adherence                               | PASS      | Eligible tracked days only                                                               |
+| Custom food, pending review                    | PASS      | Usable by its creator at once; shared after an admin approves it (one by one or in bulk) |
+| Shared food database                           | PASS      | Admin → Food Database: add, edit, activate, deactivate, review                           |
+| Duplicate detection (§11)                      | PASS      | Normalized names; one active food per name; likely duplicates shown to the admin         |
+| Merging duplicate foods (§11)                  | NOT BUILT | The database supports merges; there is no screen                                         |
 
 ### Workout and activity
 

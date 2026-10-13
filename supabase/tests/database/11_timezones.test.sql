@@ -1,6 +1,6 @@
 -- Date rules follow the USER's timezone (profiles.timezone), never the
 -- database's or one fixed zone. Two users in zones that are always on
--- different calendar days — Kiritimati (UTC+14) and Pago Pago (UTC−11) are 25
+-- different calendar days — Kiritimati (UTC+14) and Honolulu (UTC−10) are 24
 -- hours apart — so every assertion holds at any time of day:
 --   east  "today" = west "today" + 1
 begin;
@@ -14,7 +14,7 @@ as $$ select set_config('request.jwt.claims', json_build_object('sub', p_id, 'ro
 create function tests.east() returns date language sql stable
 as $$ select (now() at time zone 'Pacific/Kiritimati')::date $$;
 create function tests.west() returns date language sql stable
-as $$ select (now() at time zone 'Pacific/Pago_Pago')::date $$;
+as $$ select (now() at time zone 'Pacific/Honolulu')::date $$;
 grant usage on schema tests to authenticated;
 grant execute on all functions in schema tests to authenticated;
 create table tests.ids (key text primary key, id uuid);
@@ -26,7 +26,7 @@ insert into auth.users (id, phone, aud, role) values
   ('00000000-0000-0000-0000-0000000000f1', '919450000002', 'authenticated', 'authenticated');
 insert into public.profiles (id, phone, name, timezone) values
   ('00000000-0000-0000-0000-0000000000e1', '+919450000001', 'East', 'Pacific/Kiritimati'),
-  ('00000000-0000-0000-0000-0000000000f1', '+919450000002', 'West', 'Pacific/Pago_Pago');
+  ('00000000-0000-0000-0000-0000000000f1', '+919450000002', 'West', 'Pacific/Honolulu');
 
 -- A recommendation for each, with the SAME review window: it ends on the west
 -- user's today, which is the east user's yesterday.

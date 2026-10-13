@@ -2841,6 +2841,15 @@ export type Database = {
         }
         Returns: string
       }
+      admin_approve_food_submissions: {
+        Args: { p_items: Json; p_notes?: string }
+        Returns: {
+          food_item_id: string
+          id: string
+          message: string
+          outcome: string
+        }[]
+      }
       admin_audit_log: {
         Args: {
           p_action?: Database['public']['Enums']['audit_action']

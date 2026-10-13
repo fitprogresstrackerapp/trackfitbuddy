@@ -8,6 +8,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
   approveFoodSubmission,
+  approveFoodSubmissions,
   createFood,
   fetchFoodDuplicates,
   listFoods,
@@ -201,21 +202,23 @@ describe('Admin Food Database', () => {
           active: name !== 'Gamma',
         })
       }
+      const soups = (rows: readonly FoodAdminRow[]) =>
+        rows.filter((entry) => entry.name.includes(` soup ${tag}`))
       const byName = await listFoods(admin, filters({ search: `soup ${tag}` }), 0)
-      expect(byName.rows.map((entry) => entry.name.split(' ')[0])).toEqual([
+      expect(soups(byName.rows).map((entry) => entry.name.split(' ')[0])).toEqual([
         'Alpha',
         'Beta',
         'Gamma',
       ])
-      expect(byName.total).toBe(3)
       const newest = await listFoods(admin, filters({ search: `soup ${tag}`, sort: 'NEWEST' }), 0)
-      expect(newest.rows[0]?.name).toBe(`Gamma soup ${tag}`)
+      expect(soups(newest.rows)[0]?.name).toBe(`Gamma soup ${tag}`)
       const inactive = await listFoods(
         admin,
         filters({ search: `soup ${tag}`, status: 'INACTIVE' }),
         0,
       )
-      expect(inactive.rows.map((entry) => entry.name)).toEqual([`Gamma soup ${tag}`])
+      expect(soups(inactive.rows).map((entry) => entry.name)).toEqual([`Gamma soup ${tag}`])
+      expect(inactive.rows.every((entry) => entry.status === 'INACTIVE')).toBe(true)
       const catalogue = await listFoods(
         admin,
         { search: '', status: null, source: null, sort: 'NAME' },
@@ -482,6 +485,91 @@ describe('Admin Food Database', () => {
         (await fetchMySubmissions(other, otherId)).find((food) => food.id === submission.id)
           ?.status,
       ).toBe('REJECTED')
+    })
+  })
+
+  describe('bulk approval', () => {
+    it('approves the selected foods as submitted and skips, with a reason, the ones it cannot', async () => {
+      const names = ['Rava upma', 'Medu vada', 'Masala dosa', 'Lemon rice']
+      for (const name of names) {
+        await submitFood(
+          user,
+          userId,
+          values(`${name} ${tag}`, { servingQuantity: 1, servingUnit: 'piece' }),
+        )
+      }
+      // A shared food already has the dosa's name.
+      await createFood(admin, {
+        values: values(`Masala dosa ${tag}`),
+        isApproximate: true,
+        active: true,
+      })
+      const queue = await listFoods(admin, filters({ status: 'PENDING_REVIEW' }), 0)
+      const loaded = queue.rows.filter((row) => names.some((name) => row.name === `${name} ${tag}`))
+      expect(loaded).toHaveLength(4)
+
+      // The user edits the lemon rice after the admin loaded the queue.
+      const lemon = loaded.find((row) => row.name.startsWith('Lemon rice'))
+      const edit = await user
+        .from('food_submissions')
+        .update({ calories: 210 })
+        .eq('id', lemon?.id ?? '')
+      expect(edit.error).toBeNull()
+
+      // A normal user cannot do this, even directly.
+      expect(
+        await codeOf(
+          approveFoodSubmissions(user, {
+            items: loaded.map((row) => ({ id: row.id, version: row.updatedAt })),
+            notes: null,
+          }),
+        ),
+      ).toBe('42501')
+
+      const results = await approveFoodSubmissions(admin, {
+        items: loaded.map((row) => ({ id: row.id, version: row.updatedAt })),
+        notes: 'Batch review',
+      })
+      const byName = new Map(
+        results.map((result) => [
+          loaded.find((row) => row.id === result.id)?.name.split(' ')[0],
+          result,
+        ]),
+      )
+      expect(byName.get('Rava')).toMatchObject({ approved: true, message: null })
+      expect(byName.get('Medu')).toMatchObject({ approved: true, message: null })
+      expect(byName.get('Masala')).toMatchObject({
+        approved: false,
+        message: 'An active food with this name already exists. Use a more specific name.',
+      })
+      expect(byName.get('Lemon')).toMatchObject({
+        approved: false,
+        message: 'Changed since the list was loaded',
+      })
+
+      // Approved foods are shared, with the values the user entered.
+      const [upma] = await searchFoods(other, `Rava upma ${tag}`)
+      expect(upma).toMatchObject({
+        source: 'FOOD',
+        calories: 200,
+        servingUnit: 'piece',
+        isApproximate: true,
+      })
+      // Skipped ones are still waiting for review.
+      const after = await listFoods(admin, filters({ status: 'PENDING_REVIEW' }), 0)
+      expect(
+        after.rows
+          .filter((row) => names.some((name) => row.name === `${name} ${tag}`))
+          .map((row) => row.name.split(' ')[0])
+          .sort(),
+      ).toEqual(['Lemon', 'Masala'])
+
+      // Sending the same batch again approves nothing twice.
+      const again = await approveFoodSubmissions(admin, {
+        items: loaded.map((row) => ({ id: row.id, version: row.updatedAt })),
+        notes: null,
+      })
+      expect(again.every((result) => !result.approved)).toBe(true)
     })
   })
 })

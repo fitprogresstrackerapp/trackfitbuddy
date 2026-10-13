@@ -1,14 +1,16 @@
-import { Plus, Utensils } from 'lucide-react'
+import { CheckCheck, Plus, Utensils } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { EmptyState } from '@/components/common/empty-state'
 import { FormField } from '@/components/common/form-field'
+import { InlineAlert } from '@/components/common/inline-alert'
 import { SectionError } from '@/components/common/section-error'
 import { StatusBadge } from '@/components/data/status-badge'
 import { Breadcrumb } from '@/components/layout/breadcrumb'
 import { Page, PageHeader, Section } from '@/components/layout/page'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/choice'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -19,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ROUTES } from '@/constants/routes'
+import { hasEnergyMismatch } from '@/features/food/lib/food-quality'
 import { notify } from '@/lib/feedback'
 import { formatNumber } from '@/lib/format'
 
@@ -62,17 +65,24 @@ export function AdminFoodPage() {
   const [page, setPage] = useState(0)
   const [sheet, setSheet] = useState<FoodSheetTarget | null>(null)
   const [toggling, setToggling] = useState<FoodAdminRow | null>(null)
-  const { setActive } = useFoodAdminMutations()
+  // Bulk approval: pending foods ticked on the current page.
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
+  // The foods ticked when the confirmation opened; null while it is closed.
+  const [bulk, setBulk] = useState<readonly FoodAdminRow[] | null>(null)
+  const [skipped, setSkipped] = useState<{ name: string; message: string }[]>([])
+  const { setActive, approveMany } = useFoodAdminMutations()
 
   useEffect(() => {
+    if (search === debounced) return
     const timer = setTimeout(() => {
       setDebounced(search)
       setPage(0)
+      setSelected(new Set())
     }, 300)
     return () => {
       clearTimeout(timer)
     }
-  }, [search])
+  }, [search, debounced])
 
   const filters: FoodFilters = {
     search: debounced,
@@ -90,6 +100,7 @@ export function AdminFoodPage() {
 
   const setStatus = (value: string) => {
     setPage(0)
+    setSelected(new Set())
     setParams(value === ANY ? {} : { status: value }, { replace: true })
   }
   const addFood = (
@@ -106,6 +117,28 @@ export function AdminFoodPage() {
     setSheet(food.kind === 'FOOD' ? { mode: 'edit', food } : { mode: 'review', food })
   }
   const isQueue = status === 'PENDING_REVIEW'
+  const rows = foods.data?.rows ?? []
+  const selectable = rows.filter((food) => food.status === 'PENDING_REVIEW')
+  // Only rows on screen count: a tick never applies to a food the admin can't see.
+  const chosen = selectable.filter((food) => selected.has(food.id))
+  const allChosen = selectable.length > 0 && chosen.length === selectable.length
+  const toggle = (id: string, on: boolean) => {
+    setSelected((current) => {
+      const next = new Set(current)
+      if (on) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+  const bulkRows = bulk ?? []
+  const implausible = bulkRows.filter((food) =>
+    hasEnergyMismatch({
+      calories: food.calories,
+      protein_g: food.proteinG,
+      carbs_g: food.carbsG,
+      fat_g: food.fatG,
+    }),
+  )
   const filtered = debounced.trim() !== '' || status !== null || source !== ANY
 
   return (
@@ -136,6 +169,30 @@ export function AdminFoodPage() {
             Review
           </Button>
         </div>
+      )}
+
+      {skipped.length > 0 && (
+        <InlineAlert
+          tone="warning"
+          title={`${formatNumber(skipped.length)} ${skipped.length === 1 ? 'food was' : 'foods were'} not approved`}
+        >
+          <ul className="flex flex-col gap-1">
+            {skipped.map((item, index) => (
+              <li key={`${String(index)}-${item.name}`}>
+                <span className="text-foreground">{item.name}</span>: {item.message}
+              </li>
+            ))}
+          </ul>
+          <Button
+            variant="link"
+            className="mt-1 px-0"
+            onClick={() => {
+              setSkipped([])
+            }}
+          >
+            Dismiss
+          </Button>
+        </InlineAlert>
       )}
 
       <Section title="Find foods">
@@ -170,6 +227,7 @@ export function AdminFoodPage() {
             onChange={(value) => {
               setSource(value)
               setPage(0)
+              setSelected(new Set())
             }}
             options={[
               { value: ANY, label: 'Any source' },
@@ -183,6 +241,7 @@ export function AdminFoodPage() {
             onChange={(value) => {
               setSort(value as FoodSort)
               setPage(0)
+              setSelected(new Set())
             }}
             options={Object.entries(FOOD_SORT_LABELS).map(([value, label]) => ({ value, label }))}
           />
@@ -219,6 +278,38 @@ export function AdminFoodPage() {
             aria-busy={foods.isPlaceholderData || undefined}
             className="flex flex-col gap-5 transition-opacity aria-busy:opacity-60"
           >
+            {selectable.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-border px-3 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    id="food-select-all"
+                    checked={allChosen ? true : chosen.length > 0 ? 'indeterminate' : false}
+                    onCheckedChange={(next) => {
+                      setSelected(
+                        next === true ? new Set(selectable.map((food) => food.id)) : new Set(),
+                      )
+                    }}
+                  />
+                  <label htmlFor="food-select-all" className="text-sm text-foreground">
+                    Select all pending on this page
+                  </label>
+                </div>
+                <span className="label-mono text-muted-foreground">
+                  {formatNumber(chosen.length)} selected
+                </span>
+                <Button
+                  size="sm"
+                  className="ml-auto"
+                  disabled={chosen.length === 0}
+                  onClick={() => {
+                    setBulk(chosen)
+                  }}
+                >
+                  <CheckCheck aria-hidden="true" />
+                  Approve selected
+                </Button>
+              </div>
+            )}
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full text-sm">
                 <caption className="sr-only">
@@ -226,6 +317,11 @@ export function AdminFoodPage() {
                 </caption>
                 <thead>
                   <tr className="label-mono text-muted-foreground">
+                    {selectable.length > 0 && (
+                      <th scope="col" className="w-8 pb-2 text-left font-normal">
+                        <span className="sr-only">Select</span>
+                      </th>
+                    )}
                     <th scope="col" className="pb-2 text-left font-normal">
                       Food
                     </th>
@@ -254,6 +350,17 @@ export function AdminFoodPage() {
                 <tbody className="divide-y divide-border border-t border-border">
                   {foods.data.rows.map((food) => (
                     <tr key={`${food.kind}-${food.id}`} className="hover:bg-surface-1">
+                      {selectable.length > 0 && (
+                        <td className="w-8 py-2.5 pr-2">
+                          {food.status === 'PENDING_REVIEW' && (
+                            <SelectBox
+                              food={food}
+                              checked={selected.has(food.id)}
+                              onChange={toggle}
+                            />
+                          )}
+                        </td>
+                      )}
                       <td className="max-w-64 py-2.5 pr-3">
                         <span className="font-medium break-words text-foreground">{food.name}</span>
                         {food.isApproximate && food.kind === 'FOOD' && (
@@ -302,6 +409,9 @@ export function AdminFoodPage() {
               {foods.data.rows.map((food) => (
                 <li key={`${food.kind}-${food.id}`} className="flex flex-col gap-2 py-3">
                   <div className="flex flex-wrap items-center gap-2">
+                    {food.status === 'PENDING_REVIEW' && (
+                      <SelectBox food={food} checked={selected.has(food.id)} onChange={toggle} />
+                    )}
                     <span className="min-w-0 font-medium break-words text-foreground">
                       {food.name}
                     </span>
@@ -327,7 +437,10 @@ export function AdminFoodPage() {
               page={page}
               pageSize={FOODS_PAGE_SIZE}
               total={foods.data.total}
-              onPage={setPage}
+              onPage={(next) => {
+                setSelected(new Set())
+                setPage(next)
+              }}
             />
           </div>
         )}
@@ -339,6 +452,63 @@ export function AdminFoodPage() {
           setSheet(null)
         }}
       />
+
+      <ConfirmDialog
+        open={bulk !== null}
+        onOpenChange={(next) => {
+          if (!next) setBulk(null)
+        }}
+        eyebrow="Food database"
+        title={`Approve ${formatNumber(bulkRows.length)} ${bulkRows.length === 1 ? 'food' : 'foods'}?`}
+        description="Each food is approved exactly as its user entered it and shared with every user. To correct a value first, review that food on its own."
+        confirmLabel="Approve"
+        onConfirm={async (reason) => {
+          const results = await approveMany.mutateAsync({
+            items: bulkRows.map((food) => ({ id: food.id, version: food.updatedAt })),
+            notes: reason,
+          })
+          const names = new Map(bulkRows.map((food) => [food.id, food.name]))
+          const approved = results.filter((result) => result.approved).length
+          setSelected(new Set())
+          setSkipped(
+            results
+              .filter((result) => !result.approved)
+              .map((result) => ({
+                name: names.get(result.id) ?? 'A food',
+                message: result.message ?? 'Could not be approved',
+              })),
+          )
+          if (approved > 0) {
+            notify.success(
+              `${formatNumber(approved)} ${approved === 1 ? 'food' : 'foods'} approved`,
+              'Recorded in the audit log.',
+            )
+          }
+        }}
+      >
+        <ul className="flex max-h-48 flex-col gap-1 overflow-y-auto rounded-md border border-border px-3 py-2 text-sm">
+          {bulkRows.map((food) => (
+            <li key={food.id} className="flex flex-col">
+              <span className="text-foreground">{food.name}</span>
+              <span className="label-mono text-muted-foreground">
+                {servingBasis(food)} · {formatNumber(food.calories, 1)} kcal
+              </span>
+            </li>
+          ))}
+        </ul>
+        {implausible.length > 0 && (
+          <InlineAlert tone="warning" title="Check the calories">
+            {implausible.map((food) => food.name).join(', ')}:{' '}
+            {implausible.length === 1 ? 'its calories are' : 'their calories are'} far from what the
+            macros add up to. Review {implausible.length === 1 ? 'it' : 'them'} on{' '}
+            {implausible.length === 1 ? 'its' : 'their'} own, or approve anyway.
+          </InlineAlert>
+        )}
+        <p className="text-sm text-foreground-secondary">
+          A food whose name is already used by an active food, or that changed since this list was
+          loaded, is skipped and listed afterwards.
+        </p>
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={toggling !== null}
@@ -373,6 +543,26 @@ export function AdminFoodPage() {
         }}
       />
     </Page>
+  )
+}
+
+function SelectBox({
+  food,
+  checked,
+  onChange,
+}: {
+  food: FoodAdminRow
+  checked: boolean
+  onChange: (id: string, checked: boolean) => void
+}) {
+  return (
+    <Checkbox
+      aria-label={`Select ${food.name}`}
+      checked={checked}
+      onCheckedChange={(next) => {
+        onChange(food.id, next === true)
+      }}
+    />
   )
 }
 

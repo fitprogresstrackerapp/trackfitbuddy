@@ -225,15 +225,16 @@ verified until an admin approves it.
 **Functions** (all `SECURITY DEFINER`, each checks `is_admin()` itself; granted to
 `authenticated` and refused to everyone else):
 
-| Function                        | Does                                                                                |
-| ------------------------------- | ----------------------------------------------------------------------------------- |
-| `admin_list_foods`              | One list of foods and user-created foods: search, status, source, sort, page (25)   |
-| `admin_food_duplicates`         | Foods with the same or a similar name (normalized name, containment, trigram ≥ 0.4) |
-| `admin_create_food`             | A new shared food, active or inactive                                               |
-| `admin_update_food`             | Name, serving, nutrition, approximate flag; version-checked                         |
-| `admin_set_food_active`         | Deactivate (with a reason) or activate; version-checked                             |
-| `admin_approve_food_submission` | Creates the shared food from the reviewed values and marks the submission approved  |
-| `admin_reject_food_submission`  | Marks the submission rejected, with an optional note                                |
+| Function                         | Does                                                                                   |
+| -------------------------------- | -------------------------------------------------------------------------------------- |
+| `admin_list_foods`               | One list of foods and user-created foods: search, status, source, sort, page (25)      |
+| `admin_food_duplicates`          | Foods with the same or a similar name (normalized name, containment, trigram ≥ 0.4)    |
+| `admin_create_food`              | A new shared food, active or inactive                                                  |
+| `admin_update_food`              | Name, serving, nutrition, approximate flag; version-checked                            |
+| `admin_set_food_active`          | Deactivate (with a reason) or activate; version-checked                                |
+| `admin_approve_food_submission`  | Creates the shared food from the reviewed values and marks the submission approved     |
+| `admin_reject_food_submission`   | Marks the submission rejected, with an optional note                                   |
+| `admin_approve_food_submissions` | Bulk approval: up to 50 submissions as entered; each approved or skipped with a reason |
 
 - **Statuses in the list:** Active, Inactive, Pending review, Rejected. Approved
   submissions appear as the shared food they became. Merged foods are not listed
@@ -254,6 +255,17 @@ verified until an admin approves it.
   The creator's earlier logs then count for the shared food: it appears in their recent
   and frequent foods, and copying such a meal logs the shared food (only when the serving
   unit is unchanged, so the quantity still means the same thing).
+- **Bulk approve:** in the list, foods awaiting review have a checkbox ("Select all
+  pending on this page", then "Approve selected"). Each is approved exactly as its user
+  entered it, through the same function as a single approval (role, version, validation,
+  duplicate name, provenance, audit). Nothing is edited in bulk: a food that needs
+  correcting is reviewed on its own. The confirmation lists the foods and flags any whose
+  calories are far from their macros. A food that can't be approved (changed since the
+  list was loaded, already reviewed, name already used by an active food, values outside
+  the limits) is skipped and listed with the reason; the others are approved. Each food
+  is approved in its own savepoint, so a skipped one leaves nothing behind, and sending
+  the same batch twice approves nothing twice. Migration:
+  `supabase/migrations/20261014000200_bulk_food_approval.sql`.
 - **Reject:** the submission is kept with the reviewer, time and note. It is never
   shared and can no longer be logged; meals that already used it keep their snapshots.
 - **Stale edits:** every write checks the `updated_at` the admin saw

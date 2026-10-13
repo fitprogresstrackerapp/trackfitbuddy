@@ -3,10 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import '@/test/mock-home-data'
 import type { AppRole } from '@/features/auth/types'
+import { notify } from '@/lib/feedback'
 import { makeAccount, renderApp, signedIn } from '@/test/auth-harness'
 
 import {
   approveFoodSubmission,
+  approveFoodSubmissions,
   createFood,
   fetchFoodDuplicates,
   listFoods,
@@ -27,6 +29,7 @@ vi.mock('../api/food-admin-data', async (importOriginal) => {
     updateFood: vi.fn(),
     setFoodActive: vi.fn(),
     approveFoodSubmission: vi.fn(),
+    approveFoodSubmissions: vi.fn(),
     rejectFoodSubmission: vi.fn(),
   }
 })
@@ -88,6 +91,12 @@ function firstButton(name: string): HTMLElement {
   return button
 }
 
+function firstCheckbox(name: string): HTMLElement {
+  const [box] = screen.getAllByRole('checkbox', { name })
+  if (!box) throw new Error(`no checkbox ${name}`)
+  return box
+}
+
 async function sheet() {
   return screen.findByRole('dialog')
 }
@@ -96,6 +105,18 @@ function fill(dialog: HTMLElement, values: Record<string, string>) {
   for (const [label, value] of Object.entries(values)) {
     fireEvent.change(within(dialog).getByLabelText(label), { target: { value } })
   }
+}
+
+// A second pending food whose calories are far from its macros (25 + 2 + 1 g ≈ 117 kcal).
+const ODD: FoodAdminRow = {
+  ...PENDING,
+  id: 's2',
+  name: 'Mystery shake',
+  calories: 900,
+  proteinG: 25,
+  carbsG: 2,
+  fatG: 1,
+  submittedByName: 'Ola Other',
 }
 
 beforeEach(() => {
@@ -112,6 +133,7 @@ beforeEach(() => {
   vi.mocked(updateFood).mockResolvedValue()
   vi.mocked(setFoodActive).mockResolvedValue()
   vi.mocked(approveFoodSubmission).mockResolvedValue('f9')
+  vi.mocked(approveFoodSubmissions).mockResolvedValue([])
   vi.mocked(rejectFoodSubmission).mockResolvedValue()
 })
 
@@ -311,5 +333,80 @@ describe('Admin Food Database', () => {
       })
     })
     expect(approveFoodSubmission).not.toHaveBeenCalled()
+  })
+
+  describe('bulk approval', () => {
+    beforeEach(() => {
+      vi.mocked(listFoods).mockResolvedValue({ rows: [FOOD, PENDING, ODD], total: 3 })
+    })
+
+    it('offers selection only for foods awaiting review', async () => {
+      open()
+      await screen.findAllByText('Paneer tikka')
+      expect(
+        screen.getAllByRole('checkbox', { name: 'Select Chicken biryani' }).length,
+      ).toBeGreaterThan(0)
+      expect(screen.queryAllByRole('checkbox', { name: 'Select Paneer tikka' })).toHaveLength(0)
+      expect(
+        screen.getByRole<HTMLButtonElement>('button', { name: 'Approve selected' }).disabled,
+      ).toBe(true)
+    })
+
+    it('approves the selected foods once, warns about implausible calories, and lists skipped foods', async () => {
+      vi.mocked(approveFoodSubmissions).mockResolvedValue([
+        { id: 's1', approved: true, message: null },
+        { id: 's2', approved: false, message: 'Changed since the list was loaded' },
+      ])
+      const success = vi.spyOn(notify, 'success')
+      open()
+      await screen.findAllByText('Paneer tikka')
+      fireEvent.click(screen.getByLabelText('Select all pending on this page'))
+      expect(screen.getByText('2 selected')).toBeTruthy()
+      fireEvent.click(screen.getByRole('button', { name: 'Approve selected' }))
+
+      const dialog = await screen.findByRole('dialog')
+      expect(dialog.textContent).toContain('Approve 2 foods?')
+      expect(dialog.textContent).toContain('exactly as its user entered it')
+      expect(within(dialog).getByText('Check the calories')).toBeTruthy()
+      expect(dialog.textContent).toContain('Mystery shake')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Approve' }))
+
+      await waitFor(() => {
+        expect(approveFoodSubmissions).toHaveBeenCalledWith(expect.anything(), {
+          items: [
+            { id: 's1', version: PENDING.updatedAt },
+            { id: 's2', version: ODD.updatedAt },
+          ],
+          notes: null,
+        })
+      })
+      expect(approveFoodSubmissions).toHaveBeenCalledTimes(1)
+      expect(await screen.findByText('1 food was not approved')).toBeTruthy()
+      expect(document.body.textContent).toContain(
+        'Mystery shake: Changed since the list was loaded',
+      )
+      expect(success).toHaveBeenCalledWith('1 food approved', 'Recorded in the audit log.')
+      expect(screen.getByText('0 selected')).toBeTruthy()
+    })
+
+    it('approves one ticked food without touching the others', async () => {
+      vi.mocked(approveFoodSubmissions).mockResolvedValue([
+        { id: 's1', approved: true, message: null },
+      ])
+      open()
+      await screen.findAllByText('Paneer tikka')
+      fireEvent.click(firstCheckbox('Select Chicken biryani'))
+      fireEvent.click(screen.getByRole('button', { name: 'Approve selected' }))
+      const dialog = await screen.findByRole('dialog')
+      expect(dialog.textContent).toContain('Approve 1 food?')
+      expect(within(dialog).queryByText('Check the calories')).toBeNull()
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Approve' }))
+      await waitFor(() => {
+        expect(approveFoodSubmissions).toHaveBeenCalledWith(expect.anything(), {
+          items: [{ id: 's1', version: PENDING.updatedAt }],
+          notes: null,
+        })
+      })
+    })
   })
 })
